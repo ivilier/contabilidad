@@ -1,149 +1,46 @@
 ---
 layout: default
 title: "Catálogo"
-description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión interna de caja e inventario."
+description: "Catálogo de joyería fina, accesorios y gestión de caja e inventario."
 ---
 
-{%- comment -%}
-  Build a JS-safe JSON array of all catalog items for the inventory dropdown.
-  Liquid generates this at build time so no client-side fetch is needed.
-{%- endcomment -%}
-
 <!-- ════════════════════════════════════════════════════════════════════════════
-     SECTION 1 — PUBLIC CATALOG
+     SECTION 1 — PUBLIC STORE CATALOG (Original Design & Palette)
      ════════════════════════════════════════════════════════════════════════════ -->
-<section id="section-catalog" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in">
+<section id="section-catalog" class="animate-fade-in">
 
-  <!-- Hero Header -->
-  <div class="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-    <div>
-      <p class="text-rose-400 text-xs font-semibold uppercase tracking-widest mb-2">{{ site.title }}</p>
-      <h1 class="text-4xl sm:text-5xl font-extrabold text-white leading-none" data-i18n="page_title">Catálogo de Productos</h1>
+  <!-- Hero banner -->
+  <div class="relative bg-gradient-to-r from-gray-400 to-gray-300 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 flex flex-col items-center text-center gap-4">
+      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight" data-i18n="hero_title">Joyería con estilo</h1>
+      <p class="text-lg sm:text-xl text-gray-100 max-w-xl" data-i18n="hero_subtitle">Descubre nuestra colección de aretes, dijes y anillos. Piezas únicas para cada ocasión.</p>
+      <a href="#catalog" class="mt-4 inline-block bg-white text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors shadow-sm" data-i18n="hero_cta">
+        Ver catálogo
+      </a>
     </div>
-    <p class="text-zinc-500 text-sm font-medium tabular-nums">
-      <span id="catalog-count" class="text-zinc-300 font-bold text-xl">{{ site.data.catalog | size }}</span>
-      &nbsp;<span data-i18n="lbl_products_count">productos</span>
-    </p>
   </div>
 
-  <!-- ── Search & Filter Controls ─────────────────────────────────────────── -->
-  <div class="space-y-4 mb-8">
-
-    <!-- Search Input -->
-    <div class="relative max-w-md w-full">
-      <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-zinc-400">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-      </span>
-      <input type="text" id="catalog-search"
-        oninput="handleCatalogSearch(this.value)"
-        class="w-full bg-zinc-900/90 border border-zinc-700/80 rounded-2xl pl-10 pr-10 py-3 text-sm text-white placeholder-zinc-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all glass shadow-lg shadow-black/20"
-        data-i18n-placeholder="search_placeholder"
-        placeholder="Buscar por nombre o código (ej. E0001, arete, bolsa)..." />
-      <button id="catalog-search-clear" onclick="clearCatalogSearch()"
-        class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-200 transition-colors"
-        aria-label="Limpiar">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-
-    <!-- Category Filter Tabs -->
-    <div class="flex flex-wrap gap-2" role="tablist" aria-label="Filtro de categorías">
-      <button role="tab" aria-selected="true"
-        class="cat-btn px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200
-               bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20"
-        data-cat="all" onclick="filterCat(this, 'all')" data-i18n="cat_all">
-        Todo
-      </button>
-
-      {% assign cats = "aretes,dijes,anillos,collares,bolsas" | split: "," %}
-      {% for cat in cats %}
-      <button role="tab" aria-selected="false"
-        class="cat-btn px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200
-               bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-zinc-200"
-        data-cat="{{ cat }}" onclick="filterCat(this, '{{ cat }}')" data-i18n="cat_{{ cat }}">
-        {{ cat | capitalize }}
-      </button>
-      {% endfor %}
-    </div>
-
-  </div>
-
-  <!-- ── Product Grid ─────────────────────────────────────────────────────── -->
-  <div id="catalog-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-
-    {% for item in site.data.catalog %}
-    {%- assign cat = item.category -%}
-    {%- if cat == "aretes"   %}{%- assign badge_cls = "bg-rose-500/15 text-rose-300"    -%}
-    {%- elsif cat == "dijes"   %}{%- assign badge_cls = "bg-violet-500/15 text-violet-300" -%}
-    {%- elsif cat == "anillos" %}{%- assign badge_cls = "bg-amber-500/15 text-amber-300"   -%}
-    {%- elsif cat == "collares"%}{%- assign badge_cls = "bg-emerald-500/15 text-emerald-300"-%}
-    {%- else                   %}{%- assign badge_cls = "bg-sky-500/15 text-sky-300"       -%}
-    {%- endif %}
-
-    <div class="product-card group glass rounded-2xl p-4
-                hover:border-rose-500/30 hover:shadow-xl hover:shadow-rose-500/5
-                hover:-translate-y-0.5 transition-all duration-300"
-         data-category="{{ item.category }}"
-         data-ref="{{ item.ref_code | downcase }}"
-         data-desc="{{ item.description | downcase | escape }}"
-         role="article">
-
-      <!-- Top row: category badge + ref code -->
-      <div class="flex items-start justify-between gap-1 mb-3">
-        <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full {{ badge_cls }}">
-          {{ item.category }}
-        </span>
-        <span class="text-[10px] text-zinc-600 font-mono flex-shrink-0">{{ item.ref_code }}</span>
-      </div>
-
-      <!-- Product name -->
-      <p class="product-title text-xs sm:text-sm font-semibold text-zinc-200 leading-snug mb-4
-                group-hover:text-white transition-colors line-clamp-3">
-        {{ item.description }}
-      </p>
-
-      <!-- Price -->
-      <div class="mt-auto pt-2 border-t border-white/[0.05]">
-        <span class="text-lg font-extrabold text-rose-400 tabular-nums">{{ item.price }}</span>
-      </div>
-    </div>
-    {% endfor %}
-
-  </div>
-
-  <!-- Empty-state message (shown by JS when a filter has 0 results) -->
-  <div id="no-results" class="hidden py-20 text-center">
-    <div class="text-5xl mb-4 opacity-40">📭</div>
-    <p class="text-zinc-500 text-sm" data-i18n="no_results">No se encontraron productos que coincidan.</p>
-  </div>
+  <!-- Store Catalog with Filters & Products -->
+  {% include products.html %}
 
 </section>
 
 
 <!-- ════════════════════════════════════════════════════════════════════════════
-     SECTION 2 — OWNER MANAGEMENT PANEL
+     SECTION 2 — OWNER MANAGEMENT PANEL (Adapted to Original Store Colors)
      ════════════════════════════════════════════════════════════════════════════ -->
-<section id="section-panel" class="hidden max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in">
+<section id="section-panel" class="hidden max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in">
 
   <!-- ── PIN Gate ─────────────────────────────────────────────────────────── -->
-  <div id="pin-gate" class="min-h-[65vh] flex items-center justify-center">
-    <div class="glass rounded-3xl p-8 sm:p-10 w-full max-w-sm text-center
-                shadow-2xl shadow-black/40 border-white/[0.06]">
+  <div id="pin-gate" class="min-h-[55vh] flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-8 sm:p-10 w-full max-w-sm text-center">
 
-      <!-- Icon -->
-      <div class="w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/20
-                  flex items-center justify-center mx-auto mb-6">
-        <svg class="w-8 h-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-        </svg>
+      <!-- Lock Icon -->
+      <div class="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto mb-5 text-2xl text-gray-700">
+        🔒
       </div>
 
-      <p class="text-zinc-400 text-sm mb-5 leading-relaxed" data-i18n="pin_prompt">
+      <p class="text-gray-600 text-sm mb-5 font-medium leading-relaxed" data-i18n="pin_prompt">
         Ingresa tu PIN para acceder al panel
       </p>
 
@@ -152,23 +49,22 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         type="password"
         maxlength="64"
         autocomplete="current-password"
-        class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3.5
-               text-white text-center text-xl font-mono tracking-[0.25em]
-               focus:outline-none focus:border-rose-500 transition-colors mb-2"
+        class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3
+               text-gray-800 text-center text-xl font-mono tracking-[0.25em]
+               focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 mb-2"
         data-i18n-placeholder="pin_placeholder"
         placeholder="PIN de acceso"
         onkeydown="if(event.key === 'Enter') unlockPanel()" />
 
       <!-- Error message -->
-      <p id="pin-error" class="text-rose-400 text-xs mb-4 h-4 transition-opacity opacity-0" data-i18n="pin_error">
-        ⚠ PIN incorrecto
+      <p id="pin-error" class="text-red-500 text-xs mb-4 min-h-[1rem] transition-opacity opacity-0" data-i18n="pin_error">
+        ⚠ PIN incorrecto o no autorizado
       </p>
 
       <!-- Unlock button -->
       <button id="pin-btn" onclick="unlockPanel()"
-        class="w-full bg-rose-500 hover:bg-rose-400 active:scale-[0.98] text-white
-               font-semibold py-3.5 rounded-xl shadow-lg shadow-rose-500/25
-               transition-all duration-150 flex items-center justify-center gap-2">
+        class="w-full bg-gray-800 hover:bg-gray-900 active:scale-[0.98] text-white
+               font-semibold py-3.5 rounded-xl shadow-sm transition-all duration-150 flex items-center justify-center gap-2">
         <span id="pin-btn-text" data-i18n="pin_unlock">Desbloquear</span>
         <span id="pin-spinner" class="spinner hidden"></span>
       </button>
@@ -176,134 +72,112 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
   </div>
 
   <!-- ── Panel Content (revealed after PIN) ────────────────────────────────── -->
-  <div id="panel-content" class="hidden animate-slide-up">
+  <div id="panel-content" class="hidden space-y-8 animate-slide-up">
 
     <!-- Panel header -->
-    <div class="flex items-center justify-between mb-8">
-      <h1 class="text-3xl font-extrabold text-white" data-i18n="panel_title">Panel de Gestión</h1>
+    <div class="flex items-center justify-between">
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-800" data-i18n="panel_title">Panel de Gestión</h2>
       <button onclick="lockPanel()"
-        class="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-rose-400
-               px-3 py-2 rounded-lg hover:bg-zinc-900 transition-all">
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-        </svg>
+        class="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-2 rounded-lg font-medium shadow-sm transition-colors">
+        <span>🔒</span>
         <span data-i18n="lbl_lock">Bloquear</span>
       </button>
     </div>
 
-    <!-- Panel tab switcher -->
-    <div class="flex gap-1.5 mb-8 p-1.5 bg-zinc-900/80 rounded-2xl w-fit border border-white/[0.05]">
+    <!-- Panel Tab Switcher -->
+    <div class="flex gap-2 p-1 bg-gray-200/80 rounded-xl w-fit border border-gray-300">
       <button id="tab-btn-accounting" onclick="switchPanelTab('accounting')"
-        class="panel-tab-btn active-panel-tab px-5 py-2.5 rounded-xl text-sm font-semibold
-               transition-all duration-200">
+        class="panel-tab-btn active-panel-tab px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150">
         <span data-i18n="panel_accounting">Contabilidad</span>
       </button>
       <button id="tab-btn-inventory" onclick="switchPanelTab('inventory')"
-        class="panel-tab-btn px-5 py-2.5 rounded-xl text-sm font-semibold
-               text-zinc-500 hover:text-zinc-300 transition-all duration-200">
+        class="panel-tab-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition-all duration-150">
         <span data-i18n="panel_inventory">Inventario</span>
       </button>
     </div>
 
     <!-- ══ ACCOUNTING TAB ════════════════════════════════════════════════ -->
-    <div id="tab-accounting" class="panel-tab-content animate-slide-up space-y-6">
+    <div id="tab-accounting" class="panel-tab-content space-y-6">
 
       <!-- Live Cash Balance Summary Cards -->
-      <div class="grid grid-cols-3 gap-3 sm:gap-4">
-        <div class="glass rounded-2xl p-4 border border-emerald-500/20 bg-emerald-500/[0.03]">
-          <p class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1" data-i18n="lbl_total_in">Ingresos (Entradas)</p>
-          <p id="acc-sum-in" class="text-base sm:text-2xl font-bold text-white tabular-nums">$0.00</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-emerald-200 shadow-sm">
+          <p class="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1" data-i18n="lbl_total_in">Ingresos (Entradas)</p>
+          <p id="acc-sum-in" class="text-2xl sm:text-3xl font-bold text-emerald-800 tabular-nums">$0.00</p>
         </div>
-        <div class="glass rounded-2xl p-4 border border-rose-500/20 bg-rose-500/[0.03]">
-          <p class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider mb-1" data-i18n="lbl_total_out">Egresos (Salidas)</p>
-          <p id="acc-sum-out" class="text-base sm:text-2xl font-bold text-white tabular-nums">$0.00</p>
+        <div class="bg-white rounded-2xl p-5 border border-red-200 shadow-sm">
+          <p class="text-xs font-bold text-red-600 uppercase tracking-wider mb-1" data-i18n="lbl_total_out">Egresos (Salidas)</p>
+          <p id="acc-sum-out" class="text-2xl sm:text-3xl font-bold text-red-700 tabular-nums">$0.00</p>
         </div>
-        <div class="glass rounded-2xl p-4 border border-white/10 bg-white/[0.03]">
-          <p class="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider mb-1" data-i18n="lbl_net_balance">Balance Neto en Caja</p>
-          <p id="acc-sum-balance" class="text-base sm:text-2xl font-extrabold text-emerald-400 tabular-nums">$0.00</p>
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_net_balance">Balance Neto en Caja</p>
+          <p id="acc-sum-balance" class="text-2xl sm:text-3xl font-extrabold text-gray-800 tabular-nums">$0.00</p>
         </div>
       </div>
 
       <!-- Accounting Form Card -->
-      <div class="glass rounded-3xl p-6 sm:p-8 shadow-xl border-white/[0.06]">
-        <h2 class="text-lg font-bold text-white mb-7 flex items-center gap-2.5">
-          <span class="w-8 h-8 rounded-lg bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-400 text-base">💰</span>
+      <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-md border border-gray-200">
+        <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <span>💰</span>
           <span data-i18n="acc_title">Registrar Movimiento de Caja</span>
-        </h2>
+        </h3>
 
         <form id="accounting-form" onsubmit="submitAccounting(event)" novalidate autocomplete="off">
 
-          <!-- Honeypot anti-spam field (hidden from real users) -->
-          <input type="text" name="_hp" tabindex="-1" autocomplete="off"
-                 style="display:none" aria-hidden="true" />
+          <!-- Honeypot anti-spam field -->
+          <input type="text" name="_hp" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true" />
 
           <!-- Direction -->
           <fieldset class="mb-5">
-            <legend class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3"
-                    data-i18n="form_direction">Dirección</legend>
+            <legend class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3" data-i18n="form_direction">Dirección</legend>
             <div class="grid grid-cols-2 gap-3">
-
-              <label class="dir-card dir-in flex items-center gap-3 p-4 rounded-xl border-2
-                            border-zinc-700 cursor-pointer hover:border-emerald-700/60 transition-all duration-200">
+              <label class="dir-card dir-in flex items-center gap-3 p-4 rounded-xl border-2 border-gray-200 bg-white cursor-pointer hover:border-gray-300 transition-all duration-150">
                 <input type="radio" name="acc-direction" value="IN" class="sr-only" />
-                <span class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-lg flex-shrink-0">↑</span>
-                <span class="text-sm font-semibold text-zinc-200" data-i18n="form_money_in">Dinero Entra</span>
+                <span class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 text-lg flex-shrink-0 font-bold">↑</span>
+                <span class="text-sm font-semibold text-gray-800" data-i18n="form_money_in">Dinero Entra</span>
               </label>
 
-              <label class="dir-card dir-out flex items-center gap-3 p-4 rounded-xl border-2
-                            border-zinc-700 cursor-pointer hover:border-rose-700/60 transition-all duration-200">
+              <label class="dir-card dir-out flex items-center gap-3 p-4 rounded-xl border-2 border-gray-200 bg-white cursor-pointer hover:border-gray-300 transition-all duration-150">
                 <input type="radio" name="acc-direction" value="OUT" class="sr-only" />
-                <span class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 text-lg flex-shrink-0">↓</span>
-                <span class="text-sm font-semibold text-zinc-200" data-i18n="form_money_out">Dinero Sale</span>
+                <span class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 text-lg flex-shrink-0 font-bold">↓</span>
+                <span class="text-sm font-semibold text-gray-800" data-i18n="form_money_out">Dinero Sale</span>
               </label>
-
             </div>
-            <p id="acc-direction-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+            <p id="acc-direction-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </fieldset>
 
           <!-- Amount -->
           <div class="mb-5">
-            <label for="acc-amount" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
-                   data-i18n="form_amount">Monto</label>
+            <label for="acc-amount" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="form_amount">Monto</label>
             <div class="relative">
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold select-none">$</span>
-              <input type="number" id="acc-amount" name="acc-amount"
-                     min="0.01" step="0.01"
-                     class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl pl-9 pr-4 py-3.5
-                            text-white focus:outline-none focus:border-rose-500 transition-colors"
-                     placeholder="0.00" />
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold select-none">$</span>
+              <input type="number" id="acc-amount" name="acc-amount" min="0.01" step="0.01"
+                class="w-full bg-white border border-gray-300 rounded-xl pl-9 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
+                placeholder="0.00" />
             </div>
-            <p id="acc-amount-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_amount">El monto debe ser mayor a 0.</p>
+            <p id="acc-amount-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_amount">El monto debe ser mayor a 0.</p>
           </div>
 
           <!-- Description -->
           <div class="mb-5">
-            <label for="acc-desc" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
-                   data-i18n="form_description">Descripción</label>
+            <label for="acc-desc" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="form_description">Descripción</label>
             <input type="text" id="acc-desc" name="acc-desc" maxlength="200"
-                   class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
-                          text-white focus:outline-none focus:border-rose-500 transition-colors"
-                   data-i18n-placeholder="form_description" placeholder="Descripción" />
-            <p id="acc-desc-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+              class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
+              data-i18n-placeholder="form_description" placeholder="Descripción" />
+            <p id="acc-desc-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </div>
 
           <!-- Date -->
           <div class="mb-8">
-            <label for="acc-date" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
-                   data-i18n="form_date">Fecha</label>
+            <label for="acc-date" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="form_date">Fecha</label>
             <input type="date" id="acc-date" name="acc-date"
-                   class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
-                          text-white focus:outline-none focus:border-rose-500 transition-colors" />
-            <p id="acc-date-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+              class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors" />
+            <p id="acc-date-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </div>
 
-          <!-- Submit -->
+          <!-- Submit Button -->
           <button type="submit" id="acc-submit-btn"
-            class="w-full bg-rose-500 hover:bg-rose-400 disabled:opacity-40 disabled:cursor-not-allowed
-                   text-white font-semibold py-4 rounded-xl shadow-lg shadow-rose-500/20
-                   transition-all duration-150 active:scale-[0.98]
-                   flex items-center justify-center gap-2.5">
+            class="w-full bg-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-sm transition-all duration-150 active:scale-[0.99] flex items-center justify-center gap-2">
             <span id="acc-btn-text" data-i18n="form_submit">Registrar</span>
             <span id="acc-spinner" class="spinner hidden"></span>
           </button>
@@ -312,130 +186,115 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       </div>
 
       <!-- Recent Accounting Movements List -->
-      <div class="glass rounded-3xl p-6 sm:p-8 shadow-xl border-white/[0.06]">
+      <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-md border border-gray-200">
         <div class="flex items-center justify-between mb-5">
-          <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
             <span>📋</span>
             <span data-i18n="lbl_recent_transactions">Últimos Movimientos de Caja</span>
           </h3>
           <button type="button" onclick="fetchAccountingHistory()"
-            class="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 px-3 py-1.5 rounded-lg border border-rose-500/30 hover:bg-rose-500/10 transition-all font-semibold">
+            class="flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold transition-colors shadow-sm">
             <span>↻</span>
             <span data-i18n="lbl_refresh">Actualizar</span>
           </button>
         </div>
 
         <div id="acc-history-container" class="space-y-2.5">
-          <div class="text-center py-6 text-zinc-500 text-sm" data-i18n="lbl_loading_records">Cargando historial...</div>
+          <div class="text-center py-6 text-gray-400 text-sm" data-i18n="lbl_loading_records">Cargando historial...</div>
         </div>
       </div>
 
     </div><!-- /#tab-accounting -->
 
     <!-- ══ INVENTORY TAB ═════════════════════════════════════════════════ -->
-    <div id="tab-inventory" class="panel-tab-content hidden animate-slide-up space-y-6">
+    <div id="tab-inventory" class="panel-tab-content hidden space-y-6">
 
       <!-- Inventory Form Card -->
-      <div class="glass rounded-3xl p-6 sm:p-8 shadow-xl border-white/[0.06]">
-
-        <h2 class="text-lg font-bold text-white mb-7 flex items-center gap-2.5">
-          <span class="w-8 h-8 rounded-lg bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-400 text-base">📦</span>
+      <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-md border border-gray-200">
+        <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <span>📦</span>
           <span data-i18n="inv_title">Registrar Movimiento de Inventario</span>
-        </h2>
+        </h3>
 
         <form id="inventory-form" onsubmit="submitInventory(event)" novalidate autocomplete="off">
 
-          <!-- Honeypot anti-spam field (hidden from real users) -->
-          <input type="text" name="_hp" tabindex="-1" autocomplete="off"
-                 style="display:none" aria-hidden="true" />
+          <!-- Honeypot anti-spam field -->
+          <input type="text" name="_hp" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true" />
 
           <!-- Direction -->
           <fieldset class="mb-5">
-            <legend class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3"
-                    data-i18n="form_direction">Dirección</legend>
+            <legend class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3" data-i18n="form_direction">Dirección</legend>
             <div class="grid grid-cols-2 gap-3">
-
-              <label class="dir-card dir-in flex items-center gap-3 p-4 rounded-xl border-2
-                            border-zinc-700 cursor-pointer hover:border-emerald-700/60 transition-all duration-200">
+              <label class="dir-card dir-in flex items-center gap-3 p-4 rounded-xl border-2 border-gray-200 bg-white cursor-pointer hover:border-gray-300 transition-all duration-150">
                 <input type="radio" name="inv-direction" value="IN" class="sr-only" />
-                <span class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-lg flex-shrink-0">↑</span>
-                <span class="text-sm font-semibold text-zinc-200" data-i18n="inv_product_in">Producto Entra</span>
+                <span class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 text-lg flex-shrink-0 font-bold">↑</span>
+                <span class="text-sm font-semibold text-gray-800" data-i18n="inv_product_in">Producto Entra</span>
               </label>
 
-              <label class="dir-card dir-out flex items-center gap-3 p-4 rounded-xl border-2
-                            border-zinc-700 cursor-pointer hover:border-rose-700/60 transition-all duration-200">
+              <label class="dir-card dir-out flex items-center gap-3 p-4 rounded-xl border-2 border-gray-200 bg-white cursor-pointer hover:border-gray-300 transition-all duration-150">
                 <input type="radio" name="inv-direction" value="OUT" class="sr-only" />
-                <span class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 text-lg flex-shrink-0">↓</span>
-                <span class="text-sm font-semibold text-zinc-200" data-i18n="inv_product_out">Producto Sale</span>
+                <span class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 text-lg flex-shrink-0 font-bold">↓</span>
+                <span class="text-sm font-semibold text-gray-800" data-i18n="inv_product_out">Producto Sale</span>
               </label>
-
             </div>
-            <p id="inv-direction-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+            <p id="inv-direction-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </fieldset>
 
-          <!-- Product Selector (populated from Liquid at build time) -->
+          <!-- Product Selector (Populated from all catalog category files) -->
           <div class="mb-5">
             <div class="flex items-center justify-between mb-2">
-              <label for="inv-product" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider"
-                     data-i18n="inv_product">Producto</label>
-              <span id="inv-stock-indicator" class="hidden text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300">
+              <label for="inv-product" class="block text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="inv_product">Producto</label>
+              <span id="inv-stock-indicator" class="hidden text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 border border-gray-200">
                 <span data-i18n="lbl_stock_available">Stock disponible:</span> <span id="inv-stock-val" class="font-bold">0</span> <span data-i18n="lbl_units">unidades</span>
               </span>
             </div>
+            {% assign categories = "aretes,dijes,anillos,cadenas,bolsas,arracadas,ear_cuff,pulseras,tobilleras,esmeraldas" | split: "," %}
             <select id="inv-product" name="inv-product" onchange="updateSelectedProductStock(this.value)"
-              class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
-                     text-white focus:outline-none focus:border-rose-500 transition-colors
-                     appearance-none pr-10">
+              class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors">
               <option value="" disabled selected>— Selecciona un producto —</option>
-              {%- for item in site.data.catalog -%}
-              <option value="{{ item.ref_code }}"
-                      data-desc="{{ item.description | escape }}"
-                      data-price="{{ item.price }}"
-                      data-cat="{{ item.category }}">
-                {{ item.ref_code }} — {{ item.description }} ({{ item.price }})
-              </option>
-              {%- endfor -%}
+              {% for cat in categories %}
+                {% assign items = site.data[cat] %}
+                {% for item in items %}
+                  <option value="{{ item.ref_code }}"
+                          data-desc="{{ item.description | escape }}"
+                          data-price="{{ item.price }}"
+                          data-cat="{{ cat }}">
+                    [{{ item.ref_code }}] {{ item.description }} ({{ item.price }})
+                  </option>
+                {% endfor %}
+              {% endfor %}
             </select>
-            <p id="inv-product-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+            <p id="inv-product-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </div>
 
           <!-- Quantity -->
           <div class="mb-5">
-            <label for="inv-qty" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
-                   data-i18n="inv_quantity">Cantidad</label>
+            <label for="inv-qty" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="inv_quantity">Cantidad</label>
             <input type="number" id="inv-qty" name="inv-qty" min="1" step="1"
-                   class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
-                          text-white focus:outline-none focus:border-rose-500 transition-colors"
-                   placeholder="1" />
-            <p id="inv-qty-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_quantity">La cantidad debe ser mayor a 0.</p>
+              class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
+              placeholder="1" />
+            <p id="inv-qty-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_quantity">La cantidad debe ser mayor a 0.</p>
           </div>
 
           <!-- Notes -->
           <div class="mb-5">
-            <label for="inv-notes" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
-                   data-i18n="inv_notes">Notas</label>
+            <label for="inv-notes" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="inv_notes">Notas</label>
             <textarea id="inv-notes" name="inv-notes" rows="2" maxlength="300"
-                      class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
-                             text-white focus:outline-none focus:border-rose-500 transition-colors resize-none"
-                      data-i18n-placeholder="inv_notes" placeholder="Notas"></textarea>
+              class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors resize-none"
+              data-i18n-placeholder="inv_notes" placeholder="Notas"></textarea>
           </div>
 
           <!-- Date -->
           <div class="mb-8">
-            <label for="inv-date" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
-                   data-i18n="form_date">Fecha</label>
+            <label for="inv-date" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="form_date">Fecha</label>
             <input type="date" id="inv-date" name="inv-date"
-                   class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
-                          text-white focus:outline-none focus:border-rose-500 transition-colors" />
-            <p id="inv-date-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+              class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors" />
+            <p id="inv-date-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </div>
 
-          <!-- Submit -->
+          <!-- Submit Button -->
           <button type="submit" id="inv-submit-btn"
-            class="w-full bg-rose-500 hover:bg-rose-400 disabled:opacity-40 disabled:cursor-not-allowed
-                   text-white font-semibold py-4 rounded-xl shadow-lg shadow-rose-500/20
-                   transition-all duration-150 active:scale-[0.98]
-                   flex items-center justify-center gap-2.5">
+            class="w-full bg-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-sm transition-all duration-150 active:scale-[0.99] flex items-center justify-center gap-2">
             <span id="inv-btn-text" data-i18n="form_submit">Registrar</span>
             <span id="inv-spinner" class="spinner hidden"></span>
           </button>
@@ -444,21 +303,21 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       </div>
 
       <!-- Recent Inventory Movements List -->
-      <div class="glass rounded-3xl p-6 sm:p-8 shadow-xl border-white/[0.06]">
+      <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-md border border-gray-200">
         <div class="flex items-center justify-between mb-5">
-          <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
             <span>📦</span>
             <span data-i18n="lbl_recent_inventory">Últimos Movimientos de Stock</span>
           </h3>
           <button type="button" onclick="fetchInventoryHistory()"
-            class="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 px-3 py-1.5 rounded-lg border border-rose-500/30 hover:bg-rose-500/10 transition-all font-semibold">
+            class="flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-semibold transition-colors shadow-sm">
             <span>↻</span>
             <span data-i18n="lbl_refresh">Actualizar</span>
           </button>
         </div>
 
         <div id="inv-history-container" class="space-y-2.5">
-          <div class="text-center py-6 text-zinc-500 text-sm" data-i18n="lbl_loading_records">Cargando historial...</div>
+          <div class="text-center py-6 text-gray-400 text-sm" data-i18n="lbl_loading_records">Cargando historial...</div>
         </div>
       </div>
 
@@ -470,27 +329,21 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
 
 
 <!-- ════════════════════════════════════════════════════════════════════════════
-     PAGE-LEVEL JAVASCRIPT
+     PAGE-LEVEL SCRIPTS (Authentication, Accounting & Inventory API Handlers)
      ════════════════════════════════════════════════════════════════════════════ -->
 <style>
-  /* Active panel tab state */
   .active-panel-tab {
-    background: #f43f5e;
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(244,63,94,0.35);
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 </style>
 
 <script>
-  // ─────────────────────────────────────────────────────────────────────────
-  // STATE MANAGEMENT
-  // ─────────────────────────────────────────────────────────────────────────
-  var currentCategory = "all";
-  var currentSearchQuery = "";
   var cachedStockSummary = {};
 
   // ─────────────────────────────────────────────────────────────────────────
-  // PIN GATE (Server-validated via Apps Script)
+  // PIN AUTHENTICATION GATE (Server-validated)
   // ─────────────────────────────────────────────────────────────────────────
   async function unlockPanel() {
     var input   = document.getElementById("pin-input");
@@ -513,7 +366,6 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     errEl.style.opacity = "0";
 
     try {
-      // Test the PIN against the Accounting endpoint (limit=1)
       var testUrl = SCRIPT_URLS.accounting + (SCRIPT_URLS.accounting.includes("?") ? "&" : "?") +
                     "limit=1&auth=" + encodeURIComponent(pin);
       var res  = await fetch(testUrl, { method: "GET", redirect: "follow" });
@@ -530,11 +382,11 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         fetchAccountingHistory();
         fetchInventoryHistory();
       } else {
+        clearAuthToken();
         errEl.textContent = t("pin_error");
         errEl.style.opacity = "1";
         input.value = "";
         input.focus();
-        // Brief shake animation
         input.style.transform = "translateX(-4px)";
         setTimeout(function() { input.style.transform = "translateX(4px)"; }, 60);
         setTimeout(function() { input.style.transform = ""; }, 120);
@@ -552,8 +404,10 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
 
   function lockPanel() {
     clearAuthToken();
-    document.getElementById("pin-gate").classList.remove("hidden");
-    document.getElementById("panel-content").classList.add("hidden");
+    var pinGate = document.getElementById("pin-gate");
+    var panelContent = document.getElementById("panel-content");
+    if (pinGate) pinGate.classList.remove("hidden");
+    if (panelContent) panelContent.classList.add("hidden");
     var input = document.getElementById("pin-input");
     if (input) input.value = "";
     var errEl = document.getElementById("pin-error");
@@ -569,102 +423,36 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     });
     document.querySelectorAll(".panel-tab-btn").forEach(function(btn) {
       btn.classList.remove("active-panel-tab");
-      btn.classList.add("text-zinc-500");
+      btn.classList.add("text-gray-600");
       btn.classList.remove("text-white");
     });
 
-    document.getElementById("tab-" + tab).classList.remove("hidden");
+    var activeContent = document.getElementById("tab-" + tab);
     var activeBtn = document.getElementById("tab-btn-" + tab);
-    activeBtn.classList.add("active-panel-tab");
-    activeBtn.classList.remove("text-zinc-500");
-    activeBtn.classList.add("text-white");
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // CATALOG SEARCH & CATEGORY FILTERING (Combined in real-time)
-  // ─────────────────────────────────────────────────────────────────────────
-  function filterCat(activeBtn, cat) {
-    currentCategory = cat;
-
-    // Update button styles
-    document.querySelectorAll(".cat-btn").forEach(function(btn) {
-      var isActive = btn === activeBtn;
-      if (isActive) {
-        btn.className = btn.className
-          .replace("bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-zinc-200", "")
-          + " bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20";
-        btn.setAttribute("aria-selected", "true");
-      } else {
-        btn.className = btn.className
-          .replace("bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20", "")
-          + " bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-zinc-200";
-        btn.setAttribute("aria-selected", "false");
-      }
-    });
-
-    updateCatalogFilter();
-  }
-
-  function handleCatalogSearch(query) {
-    currentSearchQuery = (query || "").trim().toLowerCase();
-    var clearBtn = document.getElementById("catalog-search-clear");
-    if (clearBtn) {
-      clearBtn.classList.toggle("hidden", !currentSearchQuery);
+    if (activeContent) activeContent.classList.remove("hidden");
+    if (activeBtn) {
+      activeBtn.classList.add("active-panel-tab");
+      activeBtn.classList.remove("text-gray-600");
+      activeBtn.classList.add("text-white");
     }
-    updateCatalogFilter();
-  }
-
-  function clearCatalogSearch() {
-    var input = document.getElementById("catalog-search");
-    if (input) input.value = "";
-    handleCatalogSearch("");
-  }
-
-  function updateCatalogFilter() {
-    var cards = document.querySelectorAll(".product-card");
-    var visible = 0;
-
-    cards.forEach(function(card) {
-      var catMatch = currentCategory === "all" || card.dataset.category === currentCategory;
-      var searchMatch = true;
-
-      if (currentSearchQuery) {
-        var ref = card.dataset.ref || "";
-        var desc = card.dataset.desc || "";
-        searchMatch = ref.includes(currentSearchQuery) || desc.includes(currentSearchQuery);
-      }
-
-      var show = catMatch && searchMatch;
-      card.style.display = show ? "" : "none";
-      if (show) visible++;
-    });
-
-    // Update product counter
-    var countEl = document.getElementById("catalog-count");
-    if (countEl) countEl.textContent = visible;
-
-    document.getElementById("no-results").classList.toggle("hidden", visible > 0);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // DIRECTION RADIO CARDS — visual selection feedback
+  // DIRECTION RADIO CARDS STYLING FEEDBACK
   // ─────────────────────────────────────────────────────────────────────────
   document.querySelectorAll(".dir-card input[type='radio']").forEach(function(radio) {
     radio.addEventListener("change", function() {
       var group = this.closest("fieldset") || this.closest("div");
       group.querySelectorAll(".dir-card").forEach(function(card) {
-        card.classList.remove(
-          "border-emerald-500", "bg-emerald-500/10",
-          "border-rose-500",    "bg-rose-500/10"
-        );
-        card.classList.add("border-zinc-700");
+        card.classList.remove("border-emerald-500", "bg-emerald-50", "border-red-500", "bg-red-50");
+        card.classList.add("border-gray-200", "bg-white");
       });
       var label = this.closest(".dir-card");
-      label.classList.remove("border-zinc-700");
+      label.classList.remove("border-gray-200", "bg-white");
       if (this.value === "IN") {
-        label.classList.add("border-emerald-500", "bg-emerald-500/10");
+        label.classList.add("border-emerald-500", "bg-emerald-50");
       } else {
-        label.classList.add("border-rose-500", "bg-rose-500/10");
+        label.classList.add("border-red-500", "bg-red-50");
       }
     });
   });
@@ -681,9 +469,9 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     var btn     = document.getElementById(prefix + "-submit-btn");
     var spinner = document.getElementById(prefix + "-spinner");
     var text    = document.getElementById(prefix + "-btn-text");
-    btn.disabled = isLoading;
-    spinner.classList.toggle("hidden", !isLoading);
-    text.textContent = isLoading ? t("form_loading") : t("form_submit");
+    if (btn) btn.disabled = isLoading;
+    if (spinner) spinner.classList.toggle("hidden", !isLoading);
+    if (text) text.textContent = isLoading ? t("form_loading") : t("form_submit");
   }
 
   function resetDateField(id) {
@@ -704,7 +492,7 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       return;
     }
 
-    container.innerHTML = '<div class="text-center py-4 text-zinc-500 text-xs animate-pulse">' + t("lbl_loading_records") + '</div>';
+    container.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs animate-pulse">' + t("lbl_loading_records") + '</div>';
 
     try {
       var url = SCRIPT_URLS.accounting + (SCRIPT_URLS.accounting.includes("?") ? "&" : "?") +
@@ -724,11 +512,10 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         var netBalance = 0;
 
         if (data.summary) {
-          totalIn = Number(data.summary.totalIn || 0);
-          totalOut = Number(data.summary.totalOut || 0);
+          totalIn = Number(data.summary.totalIn !== undefined ? data.summary.totalIn : 0);
+          totalOut = Number(data.summary.totalOut !== undefined ? data.summary.totalOut : 0);
           netBalance = Number(data.summary.balance !== undefined ? data.summary.balance : (totalIn - totalOut));
         } else if (data.rows && data.rows.length > 0) {
-          // Robust client-side calculation from all returned rows
           data.rows.forEach(function(row) {
             var amt = parseFloat(row.Amount) || 0;
             var dir = String(row.Direction || "").toUpperCase();
@@ -741,7 +528,6 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
           netBalance = totalIn - totalOut;
         }
 
-        // Update summary cards
         var inEl = document.getElementById("acc-sum-in");
         var outEl = document.getElementById("acc-sum-out");
         var balEl = document.getElementById("acc-sum-balance");
@@ -750,12 +536,11 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         if (outEl) outEl.textContent = "$" + totalOut.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (balEl) {
           balEl.textContent = "$" + netBalance.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          balEl.className = "text-base sm:text-2xl font-extrabold tabular-nums " + (netBalance >= 0 ? "text-emerald-400" : "text-rose-400");
+          balEl.className = "text-2xl sm:text-3xl font-extrabold tabular-nums " + (netBalance >= 0 ? "text-emerald-700" : "text-red-600");
         }
 
-        // Render recent rows (up to 8)
         if (!data.rows || data.rows.length === 0) {
-          container.innerHTML = '<div class="text-center py-4 text-zinc-500 text-xs">' + t("lbl_no_recent_records") + '</div>';
+          container.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs">' + t("lbl_no_recent_records") + '</div>';
           return;
         }
 
@@ -763,21 +548,22 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         var recentRows = data.rows.slice(0, 8);
         recentRows.forEach(function(row) {
           var isEntry = String(row.Direction || "").toUpperCase() === "IN";
-          var badgeCls = isEntry ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-rose-400 bg-rose-500/10 border-rose-500/20";
+          var badgeCls = isEntry ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-red-700 bg-red-50 border-red-200";
           var sign = isEntry ? "+$" : "-$";
           var amt = parseFloat(row.Amount) || 0;
+          var dateStr = (row.Date || "").split("T")[0];
 
-          html += '<div class="flex items-center justify-between p-3 rounded-xl bg-zinc-900/60 border border-white/[0.04] text-xs sm:text-sm">' +
+          html += '<div class="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs sm:text-sm">' +
                     '<div class="flex items-center gap-3 min-w-0">' +
                       '<span class="px-2 py-1 rounded-md font-mono text-[10px] font-bold border ' + badgeCls + '">' +
                         (isEntry ? "↑ ENTRADA" : "↓ SALIDA") +
                       '</span>' +
                       '<div class="truncate">' +
-                        '<p class="text-zinc-200 font-semibold truncate">' + (row.Description || "—") + '</p>' +
-                        '<p class="text-[11px] text-zinc-500 font-mono">' + (row.Date || "") + '</p>' +
+                        '<p class="text-gray-800 font-semibold truncate">' + (row.Description || "—") + '</p>' +
+                        '<p class="text-[11px] text-gray-400 font-mono">' + dateStr + '</p>' +
                       '</div>' +
                     '</div>' +
-                    '<div class="text-right flex-shrink-0 font-bold tabular-nums ' + (isEntry ? "text-emerald-400" : "text-rose-400") + '">' +
+                    '<div class="text-right flex-shrink-0 font-bold tabular-nums ' + (isEntry ? "text-emerald-700" : "text-red-600") + '">' +
                       sign + amt.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
                     '</div>' +
                   '</div>';
@@ -785,11 +571,11 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
 
         container.innerHTML = html;
       } else {
-        container.innerHTML = '<div class="text-center py-4 text-rose-400/80 text-xs">' + t("error_msg") + '</div>';
+        container.innerHTML = '<div class="text-center py-4 text-red-500 text-xs">' + t("error_msg") + '</div>';
       }
     } catch (err) {
       console.warn("Accounting history fetch error:", err);
-      container.innerHTML = '<div class="text-center py-4 text-zinc-500 text-xs">' + t("lbl_no_recent_records") + '</div>';
+      container.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs">' + t("lbl_no_recent_records") + '</div>';
     }
   }
 
@@ -806,7 +592,7 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       return;
     }
 
-    container.innerHTML = '<div class="text-center py-4 text-zinc-500 text-xs animate-pulse">' + t("lbl_loading_records") + '</div>';
+    container.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs animate-pulse">' + t("lbl_loading_records") + '</div>';
 
     try {
       var url = SCRIPT_URLS.inventory + (SCRIPT_URLS.inventory.includes("?") ? "&" : "?") +
@@ -824,11 +610,10 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         if (data.stockSummary && Object.keys(data.stockSummary).length > 0) {
           cachedStockSummary = data.stockSummary;
         } else if (data.rows && data.rows.length > 0) {
-          // Client-side stock calculation fallback
           var summary = {};
           data.rows.forEach(function(row) {
-            var code = String(row["Ref Code"] || "").trim().toUpperCase();
-            var qty = parseInt(row.Quantity, 10) || 0;
+            var code = String(row["Ref Code"] || row.ref_code || "").trim().toUpperCase();
+            var qty = parseInt(row.Quantity || row.quantity, 10) || 0;
             var dir = String(row.Direction || "").toUpperCase();
             if (code) {
               if (!summary[code]) {
@@ -846,15 +631,13 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
           cachedStockSummary = summary;
         }
 
-        // Refresh indicator if a product is selected
         var productSelect = document.getElementById("inv-product");
         if (productSelect && productSelect.value) {
           updateSelectedProductStock(productSelect.value);
         }
 
-        // Render rows (up to 8)
         if (!data.rows || data.rows.length === 0) {
-          container.innerHTML = '<div class="text-center py-4 text-zinc-500 text-xs">' + t("lbl_no_recent_records") + '</div>';
+          container.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs">' + t("lbl_no_recent_records") + '</div>';
           return;
         }
 
@@ -862,32 +645,37 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         var recentRows = data.rows.slice(0, 8);
         recentRows.forEach(function(row) {
           var isEntry = String(row.Direction || "").toUpperCase() === "IN";
-          var badgeCls = isEntry ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-rose-400 bg-rose-500/10 border-rose-500/20";
+          var badgeCls = isEntry ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-red-700 bg-red-50 border-red-200";
           var sign = isEntry ? "+" : "-";
+          var code = row["Ref Code"] || row.ref_code || "";
+          var desc = row.Description || row.description || "—";
+          var qty = row.Quantity || row.quantity || 1;
+          var notes = row.Notes || row.notes || "";
+          var dateStr = (row.Date || "").split("T")[0];
 
-          html += '<div class="flex items-center justify-between p-3 rounded-xl bg-zinc-900/60 border border-white/[0.04] text-xs sm:text-sm">' +
+          html += '<div class="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs sm:text-sm">' +
                     '<div class="flex items-center gap-3 min-w-0">' +
                       '<span class="px-2 py-1 rounded-md font-mono text-[10px] font-bold border ' + badgeCls + '">' +
                         (isEntry ? "↑ ENTRA" : "↓ SALE") +
                       '</span>' +
                       '<div class="truncate">' +
-                        '<p class="text-zinc-200 font-semibold truncate"><span class="font-mono text-zinc-400 mr-1">' + (row["Ref Code"] || "") + '</span> ' + (row.Description || "—") + '</p>' +
-                        '<p class="text-[11px] text-zinc-500 font-mono">' + (row.Date || "") + (row.Notes ? " · " + row.Notes : "") + '</p>' +
+                        '<p class="text-gray-800 font-semibold truncate"><span class="font-mono text-gray-500 mr-1">' + code + '</span> ' + desc + '</p>' +
+                        '<p class="text-[11px] text-gray-400 font-mono">' + dateStr + (notes ? " · " + notes : "") + '</p>' +
                       '</div>' +
                     '</div>' +
-                    '<div class="text-right flex-shrink-0 font-bold tabular-nums ' + (isEntry ? "text-emerald-400" : "text-rose-400") + '">' +
-                      sign + (row.Quantity || 1) + ' ' + t("lbl_units") +
+                    '<div class="text-right flex-shrink-0 font-bold tabular-nums ' + (isEntry ? "text-emerald-700" : "text-red-600") + '">' +
+                      sign + qty + ' ' + t("lbl_units") +
                     '</div>' +
                   '</div>';
         });
 
         container.innerHTML = html;
       } else {
-        container.innerHTML = '<div class="text-center py-4 text-rose-400/80 text-xs">' + t("error_msg") + '</div>';
+        container.innerHTML = '<div class="text-center py-4 text-red-500 text-xs">' + t("error_msg") + '</div>';
       }
     } catch (err) {
       console.warn("Inventory history fetch error:", err);
-      container.innerHTML = '<div class="text-center py-4 text-zinc-500 text-xs">' + t("lbl_no_recent_records") + '</div>';
+      container.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs">' + t("lbl_no_recent_records") + '</div>';
     }
   }
 
@@ -903,20 +691,20 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
 
     var code = String(refCode).trim().toUpperCase();
     var stockObj = cachedStockSummary[code];
-    var currentStock = stockObj ? stockObj.currentStock : 0;
+    var currentStock = stockObj ? (stockObj.currentStock !== undefined ? stockObj.currentStock : 0) : 0;
 
     valEl.textContent = currentStock;
     indicator.classList.remove("hidden");
 
     if (currentStock <= 0) {
-      indicator.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/20";
+      indicator.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200";
     } else {
-      indicator.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20";
+      indicator.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200";
     }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // ACCOUNTING FORM — Validation & Submit
+  // ACCOUNTING FORM SUBMIT
   // ─────────────────────────────────────────────────────────────────────────
   function validateAccounting() {
     var direction = document.querySelector("input[name='acc-direction']:checked");
@@ -945,7 +733,6 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     e.preventDefault();
     if (!validateAccounting()) return;
 
-    // Honeypot guard
     if (document.querySelector("#accounting-form input[name='_hp']").value) return;
 
     var token = getAuthToken();
@@ -975,15 +762,18 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       if (data.status === "ok") {
         showToast(t("success_msg"), false);
         document.getElementById("accounting-form").reset();
+        document.querySelectorAll("#accounting-form .dir-card").forEach(function(c) {
+          c.classList.remove("border-emerald-500", "bg-emerald-50", "border-red-500", "bg-red-50");
+          c.classList.add("border-gray-200", "bg-white");
+        });
         resetDateField("acc-date");
-        // Refresh history & summary cards immediately
         fetchAccountingHistory();
       } else if (data.status === "unauthorized") {
         showToast(t("err_unauthorized"), true);
         lockPanel();
       } else {
         showToast(t("error_msg"), true);
-        console.error("Accounting script error:", data.message);
+        console.error("Accounting error:", data.message);
       }
     } catch (err) {
       showToast(t("error_msg"), true);
@@ -994,7 +784,7 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // INVENTORY FORM — Validation & Submit
+  // INVENTORY FORM SUBMIT
   // ─────────────────────────────────────────────────────────────────────────
   function validateInventory() {
     var direction = document.querySelector("input[name='inv-direction']:checked");
@@ -1023,7 +813,6 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     e.preventDefault();
     if (!validateInventory()) return;
 
-    // Honeypot guard
     if (document.querySelector("#inventory-form input[name='_hp']").value) return;
 
     var token = getAuthToken();
@@ -1043,8 +832,8 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       direction:   document.querySelector("input[name='inv-direction']:checked").value,
       ref_code:    productSelect.value,
       description: selectedOption.dataset.desc  || "",
-      price:       selectedOption.dataset.price  || "",
-      category:    selectedOption.dataset.cat    || "",
+      price:       selectedOption.dataset.price || "",
+      category:    selectedOption.dataset.cat   || "",
       quantity:    document.getElementById("inv-qty").value,
       notes:       document.getElementById("inv-notes").value.trim(),
       date:        document.getElementById("inv-date").value,
@@ -1060,17 +849,20 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       if (data.status === "ok") {
         showToast(t("success_msg"), false);
         document.getElementById("inventory-form").reset();
+        document.querySelectorAll("#inventory-form .dir-card").forEach(function(c) {
+          c.classList.remove("border-emerald-500", "bg-emerald-50", "border-red-500", "bg-red-50");
+          c.classList.add("border-gray-200", "bg-white");
+        });
         resetDateField("inv-date");
         var indicator = document.getElementById("inv-stock-indicator");
         if (indicator) indicator.classList.add("hidden");
-        // Refresh inventory history & stock summary
         fetchInventoryHistory();
       } else if (data.status === "unauthorized") {
         showToast(t("err_unauthorized"), true);
         lockPanel();
       } else {
         showToast(t("error_msg"), true);
-        console.error("Inventory script error:", data.message);
+        console.error("Inventory error:", data.message);
       }
     } catch (err) {
       showToast(t("error_msg"), true);

@@ -6,11 +6,8 @@
 
   <!--
     FOUT Prevention
-    ─────────────────────────────────────────────────────────────────────────
-    Runs synchronously (before any render) to read the saved language from
-    localStorage and set the `data-lang` attribute on <html> immediately.
-    This prevents a flash of un-translated Spanish content when the user's
-    saved preference is English.
+    Runs synchronously before any render to read saved language from localStorage
+    and set data-lang attribute on <html> immediately.
   -->
   <script>
     (function () {
@@ -20,46 +17,41 @@
           document.documentElement.setAttribute("data-lang", lang);
           document.documentElement.setAttribute("lang", lang);
         }
-      } catch (e) { /* localStorage unavailable — silently fall back to default */ }
+      } catch (e) {}
     })();
   </script>
 
-  <!-- ── Favicon ───────────────────────────────────────────────────────── -->
-  <link rel="icon" type="image/png" href="{{ site.url }}{{ site.baseurl }}/assets/logo.png" />
-  <link rel="apple-touch-icon" href="{{ site.url }}{{ site.baseurl }}/assets/logo.png" />
-
-  <!-- ── SEO: Title & Description ──────────────────────────────────────── -->
   <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
-  <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}" />
-  <link rel="canonical" href="{{ site.url }}{{ site.baseurl }}{{ page.url }}" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>" />
+  <meta name="description" content="{{ page.description | default: site.description }}" />
 
-  <!-- ── SEO: Open Graph ───────────────────────────────────────────────── -->
-  <meta property="og:type"        content="website" />
-  <meta property="og:locale"      content="es_MX" />
-  <meta property="og:site_name"   content="{{ site.title }}" />
-  <meta property="og:title"       content="{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}" />
-  <meta property="og:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}" />
-  <meta property="og:url"         content="{{ site.url }}{{ site.baseurl }}{{ page.url }}" />
-  <meta property="og:image"       content="{{ site.url }}{{ site.baseurl }}/assets/og-image.png" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_MX" />
+  <meta property="og:site_name" content="{{ site.title }}" />
+  <meta property="og:title" content="{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}" />
+  <meta property="og:description" content="{{ page.description | default: site.description }}" />
+  <meta property="og:url" content="{{ page.url | absolute_url }}" />
+  <meta property="og:image" content="{{ '/images/aretes/E0001.jpg' | absolute_url }}" />
 
-  <!-- ── SEO: Twitter Card ─────────────────────────────────────────────── -->
-  <meta name="twitter:card"        content="summary_large_image" />
-  <meta name="twitter:title"       content="{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}" />
-  <meta name="twitter:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}" />
-  <meta name="twitter:image"       content="{{ site.url }}{{ site.baseurl }}/assets/og-image.png" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}" />
+  <meta name="twitter:description" content="{{ page.description | default: site.description }}" />
+  <meta name="twitter:image" content="{{ '/images/aretes/E0001.jpg' | absolute_url }}" />
 
-  <!-- ── Tailwind CSS CDN ──────────────────────────────────────────────── -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            sans: ["Inter", "system-ui", "sans-serif"],
+            sans: ["Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
           },
           animation: {
-            "fade-in":  "fadeIn 0.35s ease-in-out both",
-            "slide-up": "slideUp 0.3s ease-out both",
+            "fade-in":  "fadeIn 0.25s ease-in-out both",
+            "slide-up": "slideUp 0.25s ease-out both",
           },
           keyframes: {
             fadeIn: {
@@ -67,7 +59,7 @@
               "100%": { opacity: "1" },
             },
             slideUp: {
-              "0%":   { opacity: "0", transform: "translateY(14px)" },
+              "0%":   { opacity: "0", transform: "translateY(10px)" },
               "100%": { opacity: "1", transform: "translateY(0)" },
             },
           },
@@ -76,30 +68,22 @@
     };
   </script>
 
-  <!-- ── Google Fonts: Inter ───────────────────────────────────────────── -->
+  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-  <!-- ── Global Styles ─────────────────────────────────────────────────── -->
+  <!-- Global Styles -->
   <style>
     * { box-sizing: border-box; }
-    body { font-family: "Inter", system-ui, sans-serif; }
-
-    /* Glass card utility */
-    .glass {
-      background: rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
+    body { font-family: "Inter", system-ui, -apple-system, sans-serif; }
 
     /* Loading spinner */
     .spinner {
       display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 2.5px solid rgba(255, 255, 255, 0.2);
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.75s linear infinite;
@@ -123,94 +107,120 @@
       pointer-events: auto;
     }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar            { width: 5px; }
-    ::-webkit-scrollbar-track      { background: #09090b; }
-    ::-webkit-scrollbar-thumb      { background: rgba(244, 63, 94, 0.35); border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover{ background: #f43f5e; }
-
-    /* Date picker dark mode */
-    input[type="date"] { color-scheme: dark; }
-
-    /* Custom select arrow */
-    select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.85rem center;
-      background-size: 1.1em;
+    /* Active nav button */
+    .nav-btn-active {
+      background-color: #e5e7eb;
+      color: #111827 !important;
+      font-weight: 600;
     }
 
-    /* Direction radio card — checked state */
+    /* Direction radio cards */
     .dir-card input[type="radio"]:checked ~ * { pointer-events: none; }
-    .dir-card:has(input[type="radio"]:checked).dir-in  {
+    .dir-card:has(input[type="radio"]:checked).dir-in {
       border-color: #10b981;
-      background: rgba(16, 185, 129, 0.08);
+      background-color: #ecfdf5;
     }
     .dir-card:has(input[type="radio"]:checked).dir-out {
-      border-color: #f43f5e;
-      background: rgba(244, 63, 94, 0.08);
-    }
-
-    /* Active nav button */
-    .nav-btn-active { background: rgba(244,63,94,0.12); color: #fda4af; }
-
-    /* Gradient text */
-    .gradient-text {
-      background: linear-gradient(135deg, #fb7185, #f43f5e, #e11d48);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      border-color: #ef4444;
+      background-color: #fef2f2;
     }
   </style>
 </head>
 
-<body class="bg-zinc-950 text-gray-100 min-h-screen flex flex-col antialiased">
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col antialiased">
 
   <!-- ════════════════════════════════════════════════════════════════════
-       NAVIGATION BAR
+       HEADER / NAVIGATION BAR
        ════════════════════════════════════════════════════════════════════ -->
-  <nav class="sticky top-0 z-50 border-b border-white/[0.06] bg-zinc-950/80 backdrop-blur-xl">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+      
+      <!-- Brand Logo -->
+      <a href="{{ '/' | relative_url }}" onclick="showSection('catalog'); return true;" class="flex items-center gap-2 text-xl font-bold tracking-tight text-gray-800 hover:text-gray-900 transition-colors">
+        <span>💎</span>
+        <span data-i18n="site_title">{{ site.title }}</span>
+      </a>
 
-        <!-- Logo -->
-        <a href="{{ site.baseurl }}/" class="flex items-center gap-3 group py-1" aria-label="{{ site.title }}">
-          <div class="h-10 w-10 rounded-xl bg-white/[0.04] border border-white/10 p-1 flex items-center justify-center shadow-lg shadow-black/30 group-hover:border-rose-500/40 transition-all duration-200">
-            <img src="{{ site.baseurl }}/assets/logo.png" alt="{{ site.title }} Logo" class="h-full w-full object-contain" />
-          </div>
-          <span class="font-extrabold text-lg text-gray-100 group-hover:text-white transition-colors tracking-wider font-mono lowercase">{{ site.title }}</span>
-        </a>
+      <!-- Desktop Nav -->
+      <nav class="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-600">
+        <button id="nav-catalog-btn"
+          onclick="showSection('catalog')"
+          class="nav-btn px-3 py-2 rounded-lg transition-colors hover:text-gray-900 hover:bg-gray-100 nav-btn-active"
+          aria-label="Catálogo">
+          <span data-i18n="nav_catalog">Catálogo</span>
+        </button>
 
-        <!-- Nav links + language toggle -->
-        <div class="flex items-center gap-1">
-          <button id="nav-catalog-btn"
-            class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-100 transition-all duration-150"
-            onclick="showSection('catalog')" aria-label="Catálogo">
-            <span data-i18n="nav_catalog">Catálogo</span>
-          </button>
-          <button id="nav-panel-btn"
-            class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-100 transition-all duration-150"
-            onclick="showSection('panel')" aria-label="Panel">
-            <span data-i18n="nav_panel">Panel</span>
-          </button>
+        <button id="nav-panel-btn"
+          onclick="showSection('panel')"
+          class="nav-btn px-3 py-2 rounded-lg transition-colors hover:text-gray-900 hover:bg-gray-100"
+          aria-label="Panel">
+          <span data-i18n="nav_panel">Panel</span>
+        </button>
 
-          <!-- Divider -->
-          <div class="w-px h-5 bg-white/10 mx-1"></div>
+        <!-- Social Icons -->
+        <div class="flex items-center gap-3 ml-3 pl-3 border-l border-gray-200">
+          <a href="https://facebook.com/" target="_blank" rel="noopener" aria-label="Facebook" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          <a href="https://instagram.com/" target="_blank" rel="noopener" aria-label="Instagram" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+          </a>
+          <a href="https://tiktok.com/" target="_blank" rel="noopener" aria-label="TikTok" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+          </a>
+        </div>
 
-          <!-- Language Toggle -->
-          <button id="lang-toggle"
-            onclick="toggleLang()"
-            class="px-3 py-1.5 text-xs font-bold rounded-lg border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 hover:border-rose-400 transition-all duration-150 tracking-wider"
-            aria-label="Cambiar idioma">
-            EN
-          </button>
+        <!-- Language Toggle Button -->
+        <button id="lang-toggle"
+          onclick="toggleLang()"
+          class="ml-2 inline-flex items-center gap-1.5 text-xs font-semibold border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-100 transition-colors"
+          aria-label="Change language">
+          🇺🇸 English
+        </button>
+      </nav>
+
+      <!-- Mobile Menu Button -->
+      <button id="mobile-menu-btn"
+        class="sm:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+        aria-label="Abrir menú">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+
+    </div>
+
+    <!-- Mobile Menu Drawer -->
+    <div id="mobile-menu" class="sm:hidden hidden border-t border-gray-100 px-4 pb-4 space-y-2">
+      <button onclick="showSection('catalog'); document.getElementById('mobile-menu').classList.add('hidden');"
+        class="block w-full text-left py-2 text-sm text-gray-700 font-medium hover:text-gray-900"
+        data-i18n="nav_catalog">
+        Catálogo
+      </button>
+
+      <button onclick="showSection('panel'); document.getElementById('mobile-menu').classList.add('hidden');"
+        class="block w-full text-left py-2 text-sm text-gray-700 font-medium hover:text-gray-900"
+        data-i18n="nav_panel">
+        Panel
+      </button>
+
+      <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+        <button id="lang-toggle-mobile"
+          onclick="toggleLang()"
+          class="inline-flex items-center gap-1.5 text-xs font-semibold border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-100 transition-colors"
+          aria-label="Change language">
+          🇺🇸 English
+        </button>
+
+        <div class="flex items-center gap-4 py-1">
+          <a href="https://facebook.com/" target="_blank" rel="noopener" aria-label="Facebook" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+          <a href="https://instagram.com/" target="_blank" rel="noopener" aria-label="Instagram" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+          <a href="https://tiktok.com/" target="_blank" rel="noopener" aria-label="TikTok" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></a>
         </div>
       </div>
     </div>
-  </nav>
+  </header>
 
   <!-- ════════════════════════════════════════════════════════════════════
-       MAIN CONTENT SLOT
+       MAIN CONTENT
        ════════════════════════════════════════════════════════════════════ -->
   <main class="flex-1">
     {{ content }}
@@ -219,22 +229,71 @@
   <!-- ════════════════════════════════════════════════════════════════════
        FOOTER
        ════════════════════════════════════════════════════════════════════ -->
-  <footer class="border-t border-white/[0.06] bg-zinc-950 py-8 mt-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <p class="text-zinc-500 text-sm">
-        © {{ "now" | date: "%Y" }}
-        <span class="text-zinc-400 font-medium">{{ site.title }}</span>
-        &mdash;
-        <span data-i18n="footer_rights">Todos los derechos reservados.</span>
-      </p>
+  <footer class="bg-gray-800 text-gray-300 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+
+        <!-- Store info -->
+        <div>
+          <h4 class="text-white font-bold text-lg mb-3">💎 <span data-i18n="site_title">{{ site.title }}</span></h4>
+          <p class="text-sm leading-relaxed text-gray-400" data-i18n="footer_desc">Joyería de calidad con diseños únicos para cada ocasión.</p>
+        </div>
+
+        <!-- Contact -->
+        <div>
+          <h4 class="text-white font-semibold mb-3" data-i18n="footer_contact">Contacto</h4>
+          <ul class="space-y-2 text-sm text-gray-400">
+            <li class="flex items-center gap-2">
+              <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <a href="mailto:contacto@ejemplo.com" class="hover:text-white transition-colors">contacto@ejemplo.com</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Hours & Follow -->
+        <div>
+          <h4 class="text-white font-semibold mb-3" data-i18n="footer_hours">Horario</h4>
+          <ul class="space-y-1 text-sm text-gray-400">
+            <li data-i18n="hours_weekdays">Lunes – Viernes: 10:00 – 19:00</li>
+            <li data-i18n="hours_saturday">Sábado: 10:00 – 15:00</li>
+            <li data-i18n="hours_sunday">Domingo: Cerrado</li>
+          </ul>
+          <h4 class="text-white font-semibold mt-5 mb-3" data-i18n="footer_follow">Síguenos</h4>
+          <div class="flex items-center gap-4">
+            <a href="https://facebook.com/" target="_blank" rel="noopener" aria-label="Facebook" class="text-gray-400 hover:text-white transition-colors">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+            <a href="https://instagram.com/" target="_blank" rel="noopener" aria-label="Instagram" class="text-gray-400 hover:text-white transition-colors">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            </a>
+            <a href="https://tiktok.com/" target="_blank" rel="noopener" aria-label="TikTok" class="text-gray-400 hover:text-white transition-colors">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="border-t border-gray-700 mt-8 pt-6 text-center text-xs text-gray-500" data-i18n="footer_rights">
+        © {{ 'now' | date: '%Y' }} {{ site.title }}. Todos los derechos reservados.
+      </div>
     </div>
   </footer>
+
+  <!-- Floating Back To Top Button -->
+  <button
+    id="back-to-top"
+    class="fixed bottom-6 right-6 z-50 hidden w-10 h-10 rounded-full bg-gray-500 text-white shadow-lg hover:bg-gray-600 transition-all duration-300 items-center justify-center"
+    aria-label="Volver arriba"
+  >
+    <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+  </button>
 
   <!-- ════════════════════════════════════════════════════════════════════
        TOAST NOTIFICATION
        ════════════════════════════════════════════════════════════════════ -->
   <div id="toast" class="toast" role="alert" aria-live="polite">
-    <div class="glass rounded-2xl px-5 py-3.5 flex items-center gap-3 shadow-2xl min-w-[220px] max-w-xs">
+    <div class="bg-gray-800 text-white rounded-xl px-5 py-3.5 flex items-center gap-3 shadow-2xl border border-gray-700 min-w-[220px] max-w-sm">
       <span id="toast-icon" class="text-lg flex-shrink-0">✓</span>
       <span id="toast-msg" class="text-sm font-medium leading-tight"></span>
     </div>
@@ -245,15 +304,15 @@
        ════════════════════════════════════════════════════════════════════ -->
   <script>
     // ─────────────────────────────────────────────────────────────────────────
-    // CONFIGURATION  ← Edit these values after deploying your Apps Scripts
+    // GOOGLE APPS SCRIPT PRODUCTION ENDPOINTS
     // ─────────────────────────────────────────────────────────────────────────
     const SCRIPT_URLS = {
-      accounting: "https://script.google.com/macros/s/AKfycbxEaIuz5n5qP7p02Rbm1kfriaXofFis-GHsr6CdDSgsMAnnkWRjU4Rmv0cQB8XuqQ/exec",  // Paste Accounting Web App URL here
-      inventory:  "https://script.google.com/macros/s/AKfycbxMcTrTFtmxSw_IIET-ZX-uoZxFCJp-IixvyiBB0LUhgJ8IyCF5loQQZ6b77iWx0Z0g/exec",   // Paste Inventory Web App URL here
+      accounting: "https://script.google.com/macros/s/AKfycbxEaIuz5n5qP7p02Rbm1kfriaXofFis-GHsr6CdDSgsMAnnkWRjU4Rmv0cQB8XuqQ/exec",
+      inventory:  "https://script.google.com/macros/s/AKfycbxMcTrTFtmxSw_IIET-ZX-uoZxFCJp-IixvyiBB0LUhgJ8IyCF5loQQZ6b77iWx0Z0g/exec",
     };
 
     // ─────────────────────────────────────────────────────────────────────────
-    // AUTHENTICATION UTILITIES (Backend-verified Token / SessionStorage)
+    // AUTHENTICATION UTILITIES
     // ─────────────────────────────────────────────────────────────────────────
     function getAuthToken() {
       try {
@@ -282,16 +341,60 @@
     // ─────────────────────────────────────────────────────────────────────────
     const TRANSLATIONS = {
       es: {
+        site_title:             "ivilier Joyería",
         nav_catalog:            "Catálogo",
         nav_panel:              "Panel",
-        cat_all:                "Todo",
-        cat_aretes:             "Aretes",
-        cat_dijes:              "Dijes",
-        cat_anillos:            "Anillos",
-        cat_collares:           "Collares",
-        cat_bolsas:             "Bolsas",
+        nav_contact:            "Contacto",
+        hero_title:             "Joyería con estilo",
+        hero_subtitle:          "Descubre nuestra colección de aretes, dijes y anillos. Piezas únicas para cada ocasión.",
+        hero_cta:               "Ver catálogo",
+        catalog_title:          "Catálogo de Productos",
+        filter_title:           "Filtrar por tipo",
+        filter_all:             "Todos",
+        filter_earrings:        "Aretes",
+        filter_pendants:        "Dijes",
+        filter_rings:           "Anillos",
+        filter_chains:          "Cadenas",
+        filter_bags:            "Bolsos Wayuu",
+        filter_arracadas:       "Arracadas",
+        filter_ear_cuff:        "Brazalete para oreja",
+        filter_bracelets:       "Pulseras",
+        filter_anklets:         "Tobilleras",
+        filter_emeralds:        "Esmeraldas",
+        price_title:            "Precio",
+        price_filter:           "Filtrar",
+        price_clear:            "Limpiar precio",
+        sort_default:           "Ordenar por",
+        sort_price_asc:         "Precio: menor a mayor",
+        sort_price_desc:        "Precio: mayor a menor",
+        sort_name_asc:          "Nombre: A – Z",
+        sort_name_desc:         "Nombre: Z – A",
+        no_results:             "No se encontraron productos.",
+        footer_desc:            "Joyería de calidad con diseños únicos para cada ocasión.",
+        footer_contact:         "Contacto",
+        footer_hours:           "Horario",
+        hours_weekdays:         "Lunes – Viernes: 10:00 – 19:00",
+        hours_saturday:         "Sábado: 10:00 – 15:00",
+        hours_sunday:           "Domingo: Cerrado",
+        footer_follow:          "Síguenos",
+        footer_rights:          "Todos los derechos reservados.",
+        search_placeholder:     "Buscar productos...",
+
+        // Panel specific
+        panel_title:            "Panel de Gestión",
         panel_accounting:       "Contabilidad",
         panel_inventory:        "Inventario",
+        pin_prompt:             "Ingresa tu PIN para acceder al panel",
+        pin_placeholder:        "PIN de acceso",
+        pin_unlock:             "Desbloquear",
+        pin_verifying:          "Verificando...",
+        pin_error:              "⚠ PIN incorrecto o no autorizado",
+        lbl_lock:               "Bloquear",
+        lbl_total_in:           "Ingresos (Entradas)",
+        lbl_total_out:          "Egresos (Salidas)",
+        lbl_net_balance:        "Balance Neto en Caja",
+        acc_title:              "Registrar Movimiento de Caja",
+        inv_title:              "Registrar Movimiento de Inventario",
         form_direction:         "Dirección",
         form_money_in:          "Dinero Entra",
         form_money_out:         "Dinero Sale",
@@ -306,54 +409,78 @@
         inv_quantity:           "Cantidad",
         inv_notes:              "Notas",
         inv_select_prompt:      "— Selecciona un producto —",
-        pin_prompt:             "Ingresa tu PIN para acceder al panel",
-        pin_placeholder:        "PIN de acceso",
-        pin_unlock:             "Desbloquear",
-        pin_verifying:          "Verificando...",
-        pin_error:              "⚠ PIN incorrecto o no autorizado",
-        err_unauthorized:       "Acceso no autorizado o sesión expirada.",
-        success_msg:            "✓ Registrado con éxito",
-        error_msg:              "✗ Error al enviar. Intenta de nuevo.",
-        footer_rights:          "Todos los derechos reservados.",
-        page_title:             "Catálogo de Productos",
-        panel_title:            "Panel de Gestión",
-        acc_title:              "Registrar Movimiento de Caja",
-        inv_title:              "Registrar Movimiento de Inventario",
-        no_results:             "No se encontraron productos que coincidan.",
-        err_required:           "Este campo es obligatorio.",
-        err_amount:             "El monto debe ser mayor a 0.",
-        err_quantity:           "La cantidad debe ser mayor a 0.",
-        lbl_lock:               "Bloquear",
-        lbl_products_count:     "productos",
-        search_placeholder:     "Buscar por nombre o código (ej. E0001, arete, bolsa)...",
-        search_clear:           "Limpiar",
-        lbl_balance_card:       "Balance Financiero de Caja",
-        lbl_total_in:           "Ingresos (Entradas)",
-        lbl_total_out:          "Egresos (Salidas)",
-        lbl_net_balance:        "Balance Neto en Caja",
         lbl_recent_transactions:"Últimos Movimientos de Caja",
         lbl_recent_inventory:   "Últimos Movimientos de Stock",
         lbl_refresh:            "Actualizar",
-        lbl_no_recent_records:  "No hay registros recientes.",
         lbl_loading_records:    "Cargando historial...",
-        lbl_stock_available:    "Stock disponible actual:",
+        lbl_no_recent_records:  "No hay registros recientes.",
+        lbl_stock_available:    "Stock disponible:",
         lbl_units:              "unidades",
         lbl_history_concept:    "Concepto",
         lbl_history_date:       "Fecha",
         lbl_history_amount:     "Monto",
-        lbl_uncalculated:       "N/D",
+        err_required:           "Este campo es obligatorio.",
+        err_amount:             "El monto debe ser mayor a 0.",
+        err_quantity:           "La cantidad debe ser mayor a 0.",
+        err_unauthorized:       "Acceso no autorizado o sesión expirada.",
+        success_msg:            "✓ Registrado con éxito",
+        error_msg:              "✗ Error al enviar. Intenta de nuevo.",
       },
       en: {
+        site_title:             "ivilier Jewelry",
         nav_catalog:            "Catalog",
         nav_panel:              "Panel",
-        cat_all:                "All",
-        cat_aretes:             "Earrings",
-        cat_dijes:              "Charms",
-        cat_anillos:            "Rings",
-        cat_collares:           "Necklaces",
-        cat_bolsas:             "Bags",
+        nav_contact:            "Contact",
+        hero_title:             "Jewelry with style",
+        hero_subtitle:          "Discover our collection of earrings, pendants and rings. Unique pieces for every occasion.",
+        hero_cta:               "View catalog",
+        catalog_title:          "Product Catalog",
+        filter_title:           "Filter by type",
+        filter_all:             "All",
+        filter_earrings:        "Earrings",
+        filter_pendants:        "Pendants",
+        filter_rings:           "Rings",
+        filter_chains:          "Chains",
+        filter_bags:            "Wayuu Bags",
+        filter_arracadas:       "Hoop Earrings",
+        filter_ear_cuff:        "Ear Cuffs",
+        filter_bracelets:       "Bracelets",
+        filter_anklets:         "Anklets",
+        filter_emeralds:        "Emeralds",
+        price_title:            "Price",
+        price_filter:           "Filter",
+        price_clear:            "Clear price",
+        sort_default:           "Sort by",
+        sort_price_asc:         "Price: low to high",
+        sort_price_desc:        "Price: high to low",
+        sort_name_asc:          "Name: A – Z",
+        sort_name_desc:         "Name: Z – A",
+        no_results:             "No products found.",
+        footer_desc:            "Quality jewelry with unique designs for every occasion.",
+        footer_contact:         "Contact",
+        footer_hours:           "Hours",
+        hours_weekdays:         "Monday – Friday: 10:00 – 19:00",
+        hours_saturday:         "Saturday: 10:00 – 15:00",
+        hours_sunday:           "Sunday: Closed",
+        footer_follow:          "Follow us",
+        footer_rights:          "All rights reserved.",
+        search_placeholder:     "Search products...",
+
+        // Panel specific
+        panel_title:            "Management Panel",
         panel_accounting:       "Accounting",
         panel_inventory:        "Inventory",
+        pin_prompt:             "Enter your PIN to access the panel",
+        pin_placeholder:        "Access PIN",
+        pin_unlock:             "Unlock",
+        pin_verifying:          "Verifying...",
+        pin_error:              "⚠ Incorrect PIN or unauthorized",
+        lbl_lock:               "Lock",
+        lbl_total_in:           "Total Inflows",
+        lbl_total_out:          "Total Outflows",
+        lbl_net_balance:        "Net Cash Balance",
+        acc_title:              "Log Cash Flow Entry",
+        inv_title:              "Log Inventory Movement",
         form_direction:         "Direction",
         form_money_in:          "Money In",
         form_money_out:         "Money Out",
@@ -368,53 +495,29 @@
         inv_quantity:           "Quantity",
         inv_notes:              "Notes",
         inv_select_prompt:      "— Select a product —",
-        pin_prompt:             "Enter your PIN to access the panel",
-        pin_placeholder:        "Access PIN",
-        pin_unlock:             "Unlock",
-        pin_verifying:          "Verifying...",
-        pin_error:              "⚠ Incorrect PIN or unauthorized",
-        err_unauthorized:       "Unauthorized access or session expired.",
-        success_msg:            "✓ Submitted successfully",
-        error_msg:              "✗ Submission failed. Please try again.",
-        footer_rights:          "All rights reserved.",
-        page_title:             "Product Catalog",
-        panel_title:            "Management Panel",
-        acc_title:              "Log Cash Flow Entry",
-        inv_title:              "Log Inventory Movement",
-        no_results:             "No matching products found.",
-        err_required:           "This field is required.",
-        err_amount:             "Amount must be greater than 0.",
-        err_quantity:           "Quantity must be greater than 0.",
-        lbl_lock:               "Lock",
-        lbl_products_count:     "products",
-        search_placeholder:     "Search by name or ref code (e.g. E0001, earring, bag)...",
-        search_clear:           "Clear",
-        lbl_balance_card:       "Cash Flow Balance",
-        lbl_total_in:           "Total Inflows",
-        lbl_total_out:          "Total Outflows",
-        lbl_net_balance:        "Net Cash Balance",
         lbl_recent_transactions:"Recent Cash Movements",
         lbl_recent_inventory:   "Recent Stock Movements",
         lbl_refresh:            "Refresh",
-        lbl_no_recent_records:  "No recent records found.",
         lbl_loading_records:    "Loading history...",
-        lbl_stock_available:    "Current available stock:",
+        lbl_no_recent_records:  "No recent records found.",
+        lbl_stock_available:    "Available stock:",
         lbl_units:              "units",
         lbl_history_concept:    "Concept",
         lbl_history_date:       "Date",
         lbl_history_amount:     "Amount",
-        lbl_uncalculated:       "N/A",
+        err_required:           "This field is required.",
+        err_amount:             "Amount must be greater than 0.",
+        err_quantity:           "Quantity must be greater than 0.",
+        err_unauthorized:       "Unauthorized access or session expired.",
+        success_msg:            "✓ Submitted successfully",
+        error_msg:              "✗ Submission failed. Please try again.",
       },
     };
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // i18n UTILITIES
-    // ─────────────────────────────────────────────────────────────────────────
     function getLang() {
       return document.documentElement.getAttribute("data-lang") || "es";
     }
 
-    /** Translate a key to the current language. Falls back to Spanish. */
     function t(key) {
       const lang = getLang();
       return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) ||
@@ -422,33 +525,41 @@
              key;
     }
 
-    /** Walk the DOM and replace all [data-i18n] text content and placeholders. */
     function applyTranslations() {
-      // Text content
+      var lang = getLang();
+      var dict = TRANSLATIONS[lang] || TRANSLATIONS.es;
+
       document.querySelectorAll("[data-i18n]").forEach(function (el) {
-        var key  = el.getAttribute("data-i18n");
-        var text = t(key);
-        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-          el.placeholder = text;
-        } else {
-          el.textContent = text;
+        var key = el.getAttribute("data-i18n");
+        if (dict[key]) {
+          if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+            el.placeholder = dict[key];
+          } else {
+            el.textContent = dict[key];
+          }
         }
       });
 
-      // Dedicated placeholder keys
       document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
-        el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
+        var key = el.getAttribute("data-i18n-placeholder");
+        if (dict[key]) el.placeholder = dict[key];
       });
 
-      // Update the product select placeholder option
-      var productSelect = document.getElementById("inv-product");
-      if (productSelect && productSelect.options.length > 0) {
-        productSelect.options[0].textContent = t("inv_select_prompt");
+      var searchInput = document.getElementById("search-input");
+      if (searchInput && dict.search_placeholder) {
+        searchInput.placeholder = dict.search_placeholder;
       }
 
-      // Flip the lang-toggle button label
-      var toggleBtn = document.getElementById("lang-toggle");
-      if (toggleBtn) toggleBtn.textContent = getLang() === "es" ? "EN" : "ES";
+      var invProduct = document.getElementById("inv-product");
+      if (invProduct && invProduct.options.length > 0) {
+        invProduct.options[0].textContent = dict.inv_select_prompt || "— Selecciona un producto —";
+      }
+
+      var toggleLabel = lang === "es" ? "🇺🇸 English" : "🇪🇸 Español";
+      var t1 = document.getElementById("lang-toggle");
+      var t2 = document.getElementById("lang-toggle-mobile");
+      if (t1) t1.textContent = toggleLabel;
+      if (t2) t2.textContent = toggleLabel;
     }
 
     function toggleLang() {
@@ -460,50 +571,62 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // SECTION SWITCHER  (Catalog ↔ Panel)
+    // SECTION SWITCHER (Catálogo ↔ Panel)
     // ─────────────────────────────────────────────────────────────────────────
     function showSection(name) {
-      ["catalog", "panel"].forEach(function (s) {
-        var el  = document.getElementById("section-" + s);
-        var btn = document.getElementById("nav-" + s + "-btn");
-        var isActive = s === name;
-        if (el)  el.classList.toggle("hidden", !isActive);
-        if (btn) {
-          btn.classList.toggle("nav-btn-active", isActive);
-          btn.classList.toggle("text-gray-400", !isActive);
-          btn.classList.toggle("text-rose-300", isActive);
-        }
-      });
+      var secCatalog = document.getElementById("section-catalog");
+      var secPanel   = document.getElementById("section-panel");
+      var btnCatalog = document.getElementById("nav-catalog-btn");
+      var btnPanel   = document.getElementById("nav-panel-btn");
 
       if (name === "panel") {
+        if (secCatalog) secCatalog.classList.add("hidden");
+        if (secPanel)   secPanel.classList.remove("hidden");
+
+        if (btnCatalog) btnCatalog.classList.remove("nav-btn-active");
+        if (btnPanel)   btnPanel.classList.add("nav-btn-active");
+
         var token = getAuthToken();
         var pinGate = document.getElementById("pin-gate");
         var panelContent = document.getElementById("panel-content");
+
         if (token && pinGate && panelContent) {
           pinGate.classList.add("hidden");
           panelContent.classList.remove("hidden");
-        } else if (pinGate && panelContent) {
-          pinGate.classList.remove("hidden");
-          panelContent.classList.add("hidden");
+          if (typeof fetchAccountingHistory === "function") fetchAccountingHistory();
+          if (typeof fetchInventoryHistory === "function") fetchInventoryHistory();
+        } else {
+          if (pinGate) pinGate.classList.remove("hidden");
+          if (panelContent) panelContent.classList.add("hidden");
+          var pinInp = document.getElementById("pin-input");
+          if (pinInp) {
+            pinInp.value = "";
+            setTimeout(function() { pinInp.focus(); }, 60);
+          }
         }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        if (secCatalog) secCatalog.classList.remove("hidden");
+        if (secPanel)   secPanel.classList.add("hidden");
+
+        if (btnCatalog) btnCatalog.classList.add("nav-btn-active");
+        if (btnPanel)   btnPanel.classList.remove("nav-btn-active");
       }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TOAST
+    // TOAST NOTIFICATIONS
     // ─────────────────────────────────────────────────────────────────────────
     var _toastTimer = null;
     function showToast(msg, isError) {
-      var toast    = document.getElementById("toast");
-      var toastMsg = document.getElementById("toast-msg");
-      var toastIcon= document.getElementById("toast-icon");
-      var inner    = toast.querySelector("div");
+      var toast     = document.getElementById("toast");
+      var toastMsg  = document.getElementById("toast-msg");
+      var toastIcon = document.getElementById("toast-icon");
       if (!toast || !toastMsg) return;
 
       toastMsg.textContent  = msg;
-      toastIcon.textContent = isError ? "✗" : "✓";
-      inner.style.borderColor = isError ? "rgba(244,63,94,0.4)" : "rgba(16,185,129,0.4)";
-      toastIcon.style.color   = isError ? "#fb7185" : "#34d399";
+      toastIcon.textContent = isError ? "✕" : "✓";
+      toastIcon.className   = isError ? "text-lg flex-shrink-0 text-red-400 font-bold" : "text-lg flex-shrink-0 text-emerald-400 font-bold";
 
       toast.classList.add("toast-show");
       clearTimeout(_toastTimer);
@@ -513,21 +636,47 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // DOM READY
+    // DOM READY LISTENERS
     // ─────────────────────────────────────────────────────────────────────────
     document.addEventListener("DOMContentLoaded", function () {
-      // Apply saved / default language translations
       applyTranslations();
 
-      // Pre-fill date fields with today
+      // Mobile Menu
+      var mobileBtn = document.getElementById("mobile-menu-btn");
+      var mobileMenu = document.getElementById("mobile-menu");
+      if (mobileBtn && mobileMenu) {
+        mobileBtn.addEventListener("click", function () {
+          mobileMenu.classList.toggle("hidden");
+        });
+      }
+
+      // Back to Top button
+      var backBtn = document.getElementById("back-to-top");
+      if (backBtn) {
+        window.addEventListener("scroll", function () {
+          if (window.scrollY > 400) {
+            backBtn.classList.remove("hidden");
+            backBtn.classList.add("flex");
+          } else {
+            backBtn.classList.add("hidden");
+            backBtn.classList.remove("flex");
+          }
+        });
+        backBtn.addEventListener("click", function () {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      }
+
+      // Pre-fill date inputs with today
       var today = new Date().toISOString().split("T")[0];
       document.querySelectorAll("input[type='date']").forEach(function (el) {
         if (!el.value) el.value = today;
       });
 
-      // Default section
+      // Default to public catalog view
       showSection("catalog");
     });
   </script>
+
 </body>
 </html>

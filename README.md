@@ -1,41 +1,43 @@
-# ivilier - Catálogo, Contabilidad e Inventario
+# ivilier Joyería 💎 — Catálogo, Contabilidad e Inventario
 
-Plataforma web ligera para la gestión de catálogo de productos, registro contable de flujo de caja y control de inventario de **ivilier** (joyería fina, aretes, dijes, anillos, collares y bolsas).
+Plataforma web para la tienda **ivilier Joyería**: catálogo interactivo de productos con fotografías de alta resolución, filtros avanzados y buscador, junto con un **panel privado de gestión** para el registro contable de flujo de caja y control de inventario en tiempo real.
 
-Diseñada bajo una arquitectura **Jamstack serverless**, combina un sitio estático generado con Jekyll alojado en **GitHub Pages** y dos hojas de cálculo de **Google Sheets** que actúan como base de datos a través de **Google Apps Script**.
+Construido bajo una arquitectura **Jamstack serverless**, combina un sitio estático generado con Jekyll alojado en **GitHub Pages** y dos libros de **Google Sheets** como base de datos conectados a través de **Google Apps Script**.
 
 ---
 
 ## 🌟 Características Principales
 
-- **Catálogo Público de Productos:**
-  - Visualización moderna y adaptable (responsive) para clientes con modo oscuro y diseño *glassmorphism*.
-  - **Buscador en tiempo real:** Búsqueda instantánea por nombre o código de referencia (`E0001`, `pandita`, `bolsa`).
-  - **Filtros combinados:** Filtrado por categoría (`aretes`, `dijes`, `anillos`, `collares`, `bolsas`) integrado con la barra de búsqueda.
-  - Datos desacoplados y gestionados desde un archivo YAML (`_data/catalog.yml`).
+### 🛍️ 1. Catálogo Público de Productos
+- **Diseño visual elegante:** Estética clara, moderna y limpia con tarjetas de productos, previsualización de imágenes, códigos de referencia y precios.
+- **10 Categorías de Joyería:** Aretes, Dijes, Anillos, Cadenas, Bolsos Wayuu, Arracadas, Brazalete para oreja (Ear Cuff), Pulseras, Tobilleras y Esmeraldas.
+- **Filtros por tipo y conteo dinámico:** Barra lateral con selector de categorías y conteo en tiempo real del total de piezas por sección.
+- **Filtro de rango de precio:** Entradas de precio mínimo y máximo para afinar la búsqueda.
+- **Buscador en tiempo real:** Búsqueda instantánea por nombre del producto o por código de referencia (`R0001`, `E0001`, `pandita`, `bolsa`).
+- **Ordenamiento:** Opciones para ordenar por precio (menor a mayor / mayor a menor) y por nombre (A–Z / Z–A).
+- **Estructura modular de datos:** Catálogos organizados en archivos YAML independientes bajo `_data/*.yml` con imágenes asociadas en `images/*`.
 
-- **Módulo de Contabilidad (Caja Chica):**
-  - Panel interno protegido mediante autenticación de Token/PIN validado directamente en el backend de Google Apps Script.
-  - **Métricas financieras en vivo:** Visualización automática de *Total Ingresos*, *Total Egresos* y *Balance Neto en Caja*.
-  - **Historial reciente:** Consulta inmediata de los últimos movimientos de caja sin salir de la plataforma.
-  - Registro de movimientos de efectivo: **Entradas** (ventas, otros ingresos) y **Salidas** (gastos, proveedores, retiros).
-  - Envío asíncrono y almacenamiento directo en Google Sheets con validación criptográfica en servidor.
+### 💰 2. Módulo de Contabilidad (Caja)
+- **Acceso Protegido por PIN:** Puerta de seguridad con validación en servidor contra Google Apps Script. El panel permanece bloqueado de forma predeterminada.
+- **Métricas Financieras en Vivo:** Tarjetas de balance automático con *Total Ingresos (Entradas)*, *Total Egresos (Salidas)* y *Balance Neto en Caja*.
+- **Registro de Movimientos:** Formulario para registrar movimientos de dinero (*Dinero Entra* / *Dinero Sale*, monto, concepto y fecha).
+- **Historial de Movimientos:** Lista de transacciones recientes con botón de actualización en tiempo real (↻).
 
-- **Módulo de Inventario:**
-  - **Stock disponible en tiempo real:** Indicador dinámico de existencias al seleccionar cualquier producto del catálogo.
-  - **Historial de movimientos de stock:** Registro visual de entradas y salidas recientes con notas y fechas.
-  - Registro de movimientos: **Entradas** (compras, devoluciones) y **Salidas** (ventas, mermas, ajustes).
-  - Selección de productos sincronizada con el catálogo.
+### 📦 3. Módulo de Inventario (Stock)
+- **Selector Sincronizado:** Desplegable de selección que carga automáticamente todos los productos de las 10 categorías del catálogo.
+- **Indicador de Stock en Vivo:** Al seleccionar cualquier pieza, el panel muestra la disponibilidad actual de existencias calculada desde Google Sheets.
+- **Registro de Movimientos de Stock:** Formulario para registrar entradas y salidas de mercancía con cantidad, notas y fecha.
+- **Historial de Movimientos de Inventario:** Lista de movimientos recientes con códigos de producto, conceptos y cantidades.
 
-- **Soporte Bilingüe (i18n):**
-  - Conmutador de idioma Español (predeterminado) / Inglés en tiempo real sin recargar la página.
-  - Persistencia de preferencia en `localStorage` y prevención de parpadeo (FOUT).
+### 🌐 4. Internacionalización (i18n)
+- Conmutador de idioma **Español (predeterminado) / Inglés** sin recargar la página.
+- Persistencia de preferencia en `localStorage` con script en `<head>` para prevenir parpadeos (FOUT).
 
-- **Optimización SEO y Redes Sociales:**
-  - Metaetiquetas Open Graph y Twitter Card con imagen de previsualización social (`assets/og-image.png`).
-
-- **Sin Servidor Ni Base de Datos Dedicada:**
-  - Costo cero de infraestructura y mantenimiento mínimo.
+### 🛡️ 5. Seguridad y Rendimiento
+- Validación de PIN en servidor (no se expone la clave maestra en el código estático).
+- Campos honeypot contra bots y spam.
+- Hojas de cálculo 100% privadas.
+- Costo cero de infraestructura y alta velocidad de carga.
 
 ---
 
@@ -45,11 +47,11 @@ Diseñada bajo una arquitectura **Jamstack serverless**, combina un sitio estát
 |---|---|---|
 | **Generador Estático** | [Jekyll 4.3+](https://jekyllrb.com/) | Plantillas Liquid y generación de HTML estático. |
 | **Frontend** | Vanilla JavaScript (ES6+) | Lógica de cliente, i18n, validaciones y peticiones `fetch`. |
-| **Estilos** | [Tailwind CSS](https://tailwindcss.com/) (CDN) | Estilizado moderno con paleta personalizada (acento `rose`). |
+| **Estilos** | [Tailwind CSS](https://tailwindcss.com/) (CDN) | Paleta refinada en tonos claros y neutros a juego con la tienda. |
 | **Tipografía** | Google Fonts (Inter) | Tipografía limpia y moderna. |
 | **Backend / API** | [Google Apps Script](https://developers.google.com/apps-script) | Endpoints web (`doPost` / `doGet`) para procesar transacciones. |
-| **Base de Datos** | [Google Sheets](https://www.google.com/sheets/about/) | Dos libros de cálculo privados: `Contabilidad - Caja` e `Inventario`. |
-| **CI/CD & Hosting** | GitHub Actions & GitHub Pages | Despliegue automatizado al hacer push a la rama `main`. |
+| **Base de Datos** | [Google Sheets](https://www.google.com/sheets/about/) | Dos libros privados: `Contabilidad - Caja` e `Inventario`. |
+| **CI/CD & Hosting** | GitHub Actions & GitHub Pages | Despliegue automatizado al hacer push a `main`. |
 
 ---
 
@@ -63,22 +65,43 @@ contabilidad/
 ├── index.html               # Página principal (Catálogo público + Panel de gestión con PIN)
 │
 ├── _layouts/
-│   └── default.html         # Plantilla maestra: SEO, Tailwind CDN, i18n, toasts y scripts globales
+│   └── default.html         # Plantilla maestra: cabecera, navegación, footer, scripts globales
 │
-├── _data/
-│   └── catalog.yml          # Catálogo de productos (ref_code, description, price, category)
+├── _includes/
+│   └── products.html        # Componente del catálogo con filtros y cuadrícula de productos
 │
-├── _docs/                   # Guías y scripts de backend (excluidos del build de Jekyll)
-│   ├── AccountingScript.gs  # Código Apps Script para el libro de contabilidad (caja)
-│   ├── InventoryScript.gs   # Código Apps Script para el libro de inventario
+├── _data/                   # Archivos de datos del catálogo (YAML)
+│   ├── anillos.yml
+│   ├── aretes.yml
+│   ├── arracadas.yml
+│   ├── bolsas.yml
+│   ├── cadenas.yml
+│   ├── dijes.yml
+│   ├── ear_cuff.yml
+│   ├── esmeraldas.yml
+│   ├── pulseras.yml
+│   └── tobilleras.yml
+│
+├── images/                  # Fotografías de productos organizadas por categoría
+│   ├── anillos/
+│   ├── aretes/
+│   ├── arracadas/
+│   ├── bolsas/
+│   ├── cadenas/
+│   ├── dijes/
+│   ├── ear_cuff/
+│   ├── esmeraldas/
+│   ├── pulseras/
+│   └── tobilleras/
+│
+├── _docs/                   # Scripts de backend y guías (excluidos del build)
+│   ├── AccountingScript.gs  # Google Apps Script para el libro de caja
+│   ├── InventoryScript.gs   # Google Apps Script para el libro de inventario
 │   └── SETUP.md             # Guía paso a paso de despliegue y configuración
 │
-├── .github/
-│   └── workflows/
-│       └── deploy.yml       # Flujo de CI/CD para compilar y desplegar en GitHub Pages
-│
-└── .kiro/
-    └── steering/            # Reglas y especificaciones del proyecto (producto, estructura, tech)
+└── .github/
+    └── workflows/
+        └── deploy.yml       # Flujo de CI/CD para compilar y desplegar en GitHub Pages
 ```
 
 ---
@@ -92,73 +115,44 @@ contabilidad/
 
 ### Instalación y Ejecución
 
-1. **Clonar el repositorio:**
-   ```bash
-   git clone https://github.com/TU-USUARIO/contabilidad.git
-   cd contabilidad
-   ```
-
-2. **Instalar dependencias de Ruby:**
+1. **Instalar dependencias:**
    ```bash
    bundle install
    ```
 
-3. **Iniciar el servidor local con recarga en vivo:**
+2. **Iniciar el servidor local con recarga en vivo:**
    ```bash
    bundle exec jekyll serve --livereload
    ```
 
-4. Abrir en el navegador: [http://localhost:4000/contabilidad/](http://localhost:4000/contabilidad/) (o [http://localhost:4000/](http://localhost:4000/) según el `baseurl`).
+3. Abrir en el navegador: [http://localhost:4000/](http://localhost:4000/) (o [http://localhost:4000/contabilidad/](http://localhost:4000/contabilidad/) según la configuración de `baseurl`).
 
 ---
 
 ## ⚙️ Configuración del Backend y Despliegue
 
-Para poner en funcionamiento los formularios de Contabilidad e Inventario:
-
 1. **Crear las Hojas de Cálculo y desplegar Apps Script:**
    - Sigue las instrucciones detalladas en [`_docs/SETUP.md`](./_docs/SETUP.md).
    - Copia el código de [`_docs/AccountingScript.gs`](./_docs/AccountingScript.gs) en el libro de Contabilidad.
    - Copia el código de [`_docs/InventoryScript.gs`](./_docs/InventoryScript.gs) en el libro de Inventario.
+   - Configura tu clave en `AUTH_TOKEN` (o en *Script Properties* de Apps Script).
    - Despliega ambos como **Web App** con acceso para *Cualquiera (Anyone)*.
 
 2. **Vincular las URLs en el frontend:**
-   - Edita [`_layouts/default.html`](./_layouts/default.html) y coloca las URLs generadas en la constante `SCRIPT_URLS`:
+   - Edita [`_layouts/default.html`](./_layouts/default.html) y coloca las URLs en la constante `SCRIPT_URLS`:
      ```javascript
      const SCRIPT_URLS = {
-       accounting: "TU_URL_DE_APPS_SCRIPT_CONTABILIDAD",
-       inventory:  "TU_URL_DE_APPS_SCRIPT_INVENTARIO",
+       accounting: "https://script.google.com/macros/s/.../exec",
+       inventory:  "https://script.google.com/macros/s/.../exec",
      };
      ```
-   - Configura tu PIN / Token secreto directamente en Google Apps Script (`AUTH_TOKEN` o en *Script Properties*). El PIN **nunca** se almacena en el código público del frontend.
 
-3. **Configurar `_config.yml`:**
-   - Ajusta `url` y `baseurl` con los datos de tu repositorio de GitHub Pages.
-
-4. **Desplegar en GitHub Pages:**
+3. **Desplegar en GitHub Pages:**
    - Haz push a la rama `main`.
-   - En tu repositorio de GitHub, ve a **Settings → Pages** y selecciona **GitHub Actions** como fuente.
-
----
-
-## 📦 Gestión del Catálogo de Productos
-
-Los productos se definen en [`_data/catalog.yml`](./_data/catalog.yml). Para añadir un nuevo producto, simplemente agrega una entrada con el siguiente formato:
-
-```yaml
-- ref_code: "E0010"
-  description: "Aretes Colgantes Dorados"
-  price: "$25"
-  category: "aretes"
-```
-
-> **Categorías permitidas:** `aretes`, `dijes`, `anillos`, `collares`, `bolsas`.
+   - En tu repositorio de GitHub, ve a **Settings → Pages** y selecciona **GitHub Actions** como fuente de compilación.
 
 ---
 
 ## 📖 Documentación Adicional
 
 - [Guía completa de configuración y despliegue (`_docs/SETUP.md`)](./_docs/SETUP.md)
-- [Especificaciones de producto (`.kiro/steering/product.md`)](./.kiro/steering/product.md)
-- [Estructura del proyecto (`.kiro/steering/structure.md`)](./.kiro/steering/structure.md)
-- [Stack tecnológico y restricciones (`.kiro/steering/tech.md`)](./.kiro/steering/tech.md)
