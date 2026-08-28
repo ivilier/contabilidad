@@ -83,9 +83,25 @@ Test the GET endpoint in your browser:
 https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?limit=5
 ```
 
-You should see:
+For **Accounting**, you will see recent rows and cash balance:
 ```json
-{ "status": "ok", "rows": [], "total": 0 }
+{
+  "status": "ok",
+  "rows": [],
+  "total": 0,
+  "summary": { "totalIn": 0, "totalOut": 0, "balance": 0, "totalCount": 0 }
+}
+```
+
+For **Inventory**, you will see recent rows and consolidated stock by product:
+```json
+{
+  "status": "ok",
+  "rows": [],
+  "total": 0,
+  "stockSummary": {},
+  "totalMovements": 0
+}
 ```
 
 ---

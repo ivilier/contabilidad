@@ -79,7 +79,7 @@ function doPost(e) {
 }
 
 
-// ══ GET — Return the last N rows as JSON ══════════════════════════════════════
+// ══ GET — Return the last N rows as JSON + stock summary ══════════════════════
 //
 // Query parameters (all optional):
 //   ?limit=50             — number of rows to return (default 50, max 500)
@@ -99,35 +99,77 @@ function doGet(e) {
     var all   = sheet.getDataRange().getValues();
 
     if (all.length <= 1) {
-      return jsonResponse({ status: "ok", rows: [], total: 0 });
+      return jsonResponse({
+        status: "ok",
+        rows: [],
+        total: 0,
+        stockSummary: {},
+        totalMovements: 0
+      });
     }
 
     var headers = all[0];
-    var rows = all.slice(1).map(function(row) {
+    var stockSummary = {};
+
+    var allRows = all.slice(1).map(function(row) {
       var obj = {};
       headers.forEach(function(h, i) { obj[h] = row[i]; });
+
+      var code = String(obj["Ref Code"] || "").trim().toUpperCase();
+      var qty  = parseInt(obj["Quantity"], 10) || 0;
+      var dir  = String(obj["Direction"] || "").toUpperCase();
+
+      if (code) {
+        if (!stockSummary[code]) {
+          stockSummary[code] = {
+            ref_code:     code,
+            description:  obj["Description"] || "",
+            price:        obj["Price"] || "",
+            category:     obj["Category"] || "",
+            totalIn:      0,
+            totalOut:     0,
+            currentStock: 0
+          };
+        }
+        if (dir === "IN") {
+          stockSummary[code].totalIn += qty;
+          stockSummary[code].currentStock += qty;
+        } else if (dir === "OUT") {
+          stockSummary[code].totalOut += qty;
+          stockSummary[code].currentStock -= qty;
+        }
+      }
+
       return obj;
     });
 
+    var filteredRows = allRows;
+
     // Apply optional filters
     if (refFilter) {
-      rows = rows.filter(function(r) {
+      filteredRows = filteredRows.filter(function(r) {
         return String(r["Ref Code"]).toUpperCase() === refFilter.toUpperCase();
       });
     }
     if (dirFilter === "IN" || dirFilter === "OUT") {
-      rows = rows.filter(function(r) { return r["Direction"] === dirFilter; });
+      filteredRows = filteredRows.filter(function(r) { return r["Direction"] === dirFilter; });
     }
     if (catFilter) {
-      rows = rows.filter(function(r) {
+      filteredRows = filteredRows.filter(function(r) {
         return String(r["Category"]).toLowerCase() === catFilter.toLowerCase();
       });
     }
 
     // Most recent first, capped at limit
-    rows = rows.reverse().slice(0, limit);
+    var recentRows = filteredRows.slice().reverse().slice(0, limit);
 
-    return jsonResponse({ status: "ok", rows: rows, total: rows.length });
+    return jsonResponse({
+      status: "ok",
+      rows: recentRows,
+      total: recentRows.length,
+      stockSummary: stockSummary,
+      totalMovements: allRows.length
+    });
 
   } catch (err) {
     Logger.log("doGet error: " + err.toString());

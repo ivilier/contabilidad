@@ -69,7 +69,7 @@ function doPost(e) {
 }
 
 
-// ══ GET — Return the last N rows as JSON ══════════════════════════════════════
+// ══ GET — Return the last N rows as JSON + cash summary ════════════════════════
 //
 // Query parameters (all optional):
 //   ?limit=50         — number of rows to return (default 50, max 500)
@@ -86,25 +86,50 @@ function doGet(e) {
 
     // If there's only a header row (or empty), return empty array
     if (all.length <= 1) {
-      return jsonResponse({ status: "ok", rows: [], total: 0 });
+      return jsonResponse({
+        status: "ok",
+        rows: [],
+        total: 0,
+        summary: { totalIn: 0, totalOut: 0, balance: 0, totalCount: 0 }
+      });
     }
 
     var headers = all[0];
-    var rows = all.slice(1).map(function(row) {
+    var totalIn = 0;
+    var totalOut = 0;
+
+    var allRows = all.slice(1).map(function(row) {
       var obj = {};
       headers.forEach(function(h, i) { obj[h] = row[i]; });
+      var amt = parseFloat(obj["Amount"]) || 0;
+      if (obj["Direction"] === "IN") {
+        totalIn += amt;
+      } else if (obj["Direction"] === "OUT") {
+        totalOut += amt;
+      }
       return obj;
     });
 
+    var filteredRows = allRows;
     // Optional direction filter
     if (dirFilter === "IN" || dirFilter === "OUT") {
-      rows = rows.filter(function(r) { return r["Direction"] === dirFilter; });
+      filteredRows = filteredRows.filter(function(r) { return r["Direction"] === dirFilter; });
     }
 
     // Most recent rows first, capped at limit
-    rows = rows.reverse().slice(0, limit);
+    var recentRows = filteredRows.slice().reverse().slice(0, limit);
 
-    return jsonResponse({ status: "ok", rows: rows, total: rows.length });
+    return jsonResponse({
+      status: "ok",
+      rows: recentRows,
+      total: recentRows.length,
+      summary: {
+        totalIn: Math.round(totalIn * 100) / 100,
+        totalOut: Math.round(totalOut * 100) / 100,
+        balance: Math.round((totalIn - totalOut) * 100) / 100,
+        totalCount: allRows.length
+      }
+    });
 
   } catch (err) {
     Logger.log("doGet error: " + err.toString());
