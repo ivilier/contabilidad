@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es" data-lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!--
+    FOUT Prevention
+    ─────────────────────────────────────────────────────────────────────────
+    Runs synchronously (before any render) to read the saved language from
+    localStorage and set the `data-lang` attribute on <html> immediately.
+    This prevents a flash of un-translated Spanish content when the user's
+    saved preference is English.
+  -->
+  <script>
+    (function () {
+      try {
+        var lang = localStorage.getItem("lang");
+        if (lang === "en" || lang === "es") {
+          document.documentElement.setAttribute("data-lang", lang);
+          document.documentElement.setAttribute("lang", lang);
+        }
+      } catch (e) { /* localStorage unavailable — silently fall back to default */ }
+    })();
+  </script>
+
+  <!-- ── SEO: Title & Description ──────────────────────────────────────── -->
+  <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+  <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}" />
+  <link rel="canonical" href="{{ site.url }}{{ site.baseurl }}{{ page.url }}" />
+
+  <!-- ── SEO: Open Graph ───────────────────────────────────────────────── -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:locale"      content="es_MX" />
+  <meta property="og:site_name"   content="{{ site.title }}" />
+  <meta property="og:title"       content="{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}" />
+  <meta property="og:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}" />
+  <meta property="og:url"         content="{{ site.url }}{{ site.baseurl }}{{ page.url }}" />
+  <meta property="og:image"       content="{{ site.url }}{{ site.baseurl }}/assets/og-image.png" />
+
+  <!-- ── SEO: Twitter Card ─────────────────────────────────────────────── -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}" />
+  <meta name="twitter:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}" />
+  <meta name="twitter:image"       content="{{ site.url }}{{ site.baseurl }}/assets/og-image.png" />
+
+  <!-- ── Tailwind CSS CDN ──────────────────────────────────────────────── -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter", "system-ui", "sans-serif"],
+          },
+          animation: {
+            "fade-in":  "fadeIn 0.35s ease-in-out both",
+            "slide-up": "slideUp 0.3s ease-out both",
+          },
+          keyframes: {
+            fadeIn: {
+              "0%":   { opacity: "0" },
+              "100%": { opacity: "1" },
+            },
+            slideUp: {
+              "0%":   { opacity: "0", transform: "translateY(14px)" },
+              "100%": { opacity: "1", transform: "translateY(0)" },
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- ── Google Fonts: Inter ───────────────────────────────────────────── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- ── Global Styles ─────────────────────────────────────────────────── -->
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Inter", system-ui, sans-serif; }
+
+    /* Glass card utility */
+    .glass {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+      pointer-events: none;
+    }
+    .toast.toast-show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar            { width: 5px; }
+    ::-webkit-scrollbar-track      { background: #09090b; }
+    ::-webkit-scrollbar-thumb      { background: rgba(244, 63, 94, 0.35); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover{ background: #f43f5e; }
+
+    /* Date picker dark mode */
+    input[type="date"] { color-scheme: dark; }
+
+    /* Custom select arrow */
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+      background-size: 1.1em;
+    }
+
+    /* Direction radio card — checked state */
+    .dir-card input[type="radio"]:checked ~ * { pointer-events: none; }
+    .dir-card:has(input[type="radio"]:checked).dir-in  {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .dir-card:has(input[type="radio"]:checked).dir-out {
+      border-color: #f43f5e;
+      background: rgba(244, 63, 94, 0.08);
+    }
+
+    /* Active nav button */
+    .nav-btn-active { background: rgba(244,63,94,0.12); color: #fda4af; }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #fb7185, #f43f5e, #e11d48);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+
+<body class="bg-zinc-950 text-gray-100 min-h-screen flex flex-col antialiased">
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       NAVIGATION BAR
+       ════════════════════════════════════════════════════════════════════ -->
+  <nav class="sticky top-0 z-50 border-b border-white/[0.06] bg-zinc-950/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+
+        <!-- Logo -->
+        <a href="{{ site.baseurl }}/" class="flex items-center gap-2.5 group" aria-label="{{ site.title }}">
+          <div class="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/30 group-hover:bg-rose-400 transition-colors duration-200">
+            <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </div>
+          <span class="font-bold text-gray-100 group-hover:text-white transition-colors">{{ site.title }}</span>
+        </a>
+
+        <!-- Nav links + language toggle -->
+        <div class="flex items-center gap-1">
+          <button id="nav-catalog-btn"
+            class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-100 transition-all duration-150"
+            onclick="showSection('catalog')" aria-label="Catálogo">
+            <span data-i18n="nav_catalog">Catálogo</span>
+          </button>
+          <button id="nav-panel-btn"
+            class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-100 transition-all duration-150"
+            onclick="showSection('panel')" aria-label="Panel">
+            <span data-i18n="nav_panel">Panel</span>
+          </button>
+
+          <!-- Divider -->
+          <div class="w-px h-5 bg-white/10 mx-1"></div>
+
+          <!-- Language Toggle -->
+          <button id="lang-toggle"
+            onclick="toggleLang()"
+            class="px-3 py-1.5 text-xs font-bold rounded-lg border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 hover:border-rose-400 transition-all duration-150 tracking-wider"
+            aria-label="Cambiar idioma">
+            EN
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       MAIN CONTENT SLOT
+       ════════════════════════════════════════════════════════════════════ -->
+  <main class="flex-1">
+    {{ content }}
+  </main>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       FOOTER
+       ════════════════════════════════════════════════════════════════════ -->
+  <footer class="border-t border-white/[0.06] bg-zinc-950 py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-zinc-500 text-sm">
+        © {{ "now" | date: "%Y" }}
+        <span class="text-zinc-400 font-medium">{{ site.title }}</span>
+        &mdash;
+        <span data-i18n="footer_rights">Todos los derechos reservados.</span>
+      </p>
+    </div>
+  </footer>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       TOAST NOTIFICATION
+       ════════════════════════════════════════════════════════════════════ -->
+  <div id="toast" class="toast" role="alert" aria-live="polite">
+    <div class="glass rounded-2xl px-5 py-3.5 flex items-center gap-3 shadow-2xl min-w-[220px] max-w-xs">
+      <span id="toast-icon" class="text-lg flex-shrink-0">✓</span>
+      <span id="toast-msg" class="text-sm font-medium leading-tight"></span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       GLOBAL JAVASCRIPT
+       ════════════════════════════════════════════════════════════════════ -->
+  <script>
+    // ─────────────────────────────────────────────────────────────────────────
+    // CONFIGURATION  ← Edit these values after deploying your Apps Scripts
+    // ─────────────────────────────────────────────────────────────────────────
+    const SCRIPT_URLS = {
+      accounting: "https://script.google.com/macros/s/AKfycbxEaIuz5n5qP7p02Rbm1kfriaXofFis-GHsr6CdDSgsMAnnkWRjU4Rmv0cQB8XuqQ/exec",  // Paste Accounting Web App URL here
+      inventory:  "https://script.google.com/macros/s/AKfycbxMcTrTFtmxSw_IIET-ZX-uoZxFCJp-IixvyiBB0LUhgJ8IyCF5loQQZ6b77iWx0Z0g/exec",   // Paste Inventory Web App URL here
+    };
+
+    // Owner panel PIN — change this before deploying
+    const ACCESS_PIN = "1234";
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TRANSLATION DICTIONARY
+    // ─────────────────────────────────────────────────────────────────────────
+    const TRANSLATIONS = {
+      es: {
+        nav_catalog:        "Catálogo",
+        nav_panel:          "Panel",
+        cat_all:            "Todo",
+        cat_aretes:         "Aretes",
+        cat_dijes:          "Dijes",
+        cat_anillos:        "Anillos",
+        cat_collares:       "Collares",
+        cat_bolsas:         "Bolsas",
+        panel_accounting:   "Contabilidad",
+        panel_inventory:    "Inventario",
+        form_direction:     "Dirección",
+        form_money_in:      "Dinero Entra",
+        form_money_out:     "Dinero Sale",
+        form_amount:        "Monto",
+        form_description:   "Descripción",
+        form_date:          "Fecha",
+        form_submit:        "Registrar",
+        form_loading:       "Enviando...",
+        inv_product_in:     "Producto Entra",
+        inv_product_out:    "Producto Sale",
+        inv_product:        "Producto",
+        inv_quantity:       "Cantidad",
+        inv_notes:          "Notas",
+        inv_select_prompt:  "— Selecciona un producto —",
+        pin_prompt:         "Ingresa tu PIN para acceder al panel",
+        pin_placeholder:    "PIN de acceso",
+        pin_unlock:         "Desbloquear",
+        pin_error:          "⚠ PIN incorrecto",
+        success_msg:        "✓ Registrado con éxito",
+        error_msg:          "✗ Error al enviar. Intenta de nuevo.",
+        footer_rights:      "Todos los derechos reservados.",
+        page_title:         "Catálogo de Productos",
+        panel_title:        "Panel de Gestión",
+        acc_title:          "Registrar Movimiento de Caja",
+        inv_title:          "Registrar Movimiento de Inventario",
+        no_results:         "No hay productos en esta categoría.",
+        err_required:       "Este campo es obligatorio.",
+        err_amount:         "El monto debe ser mayor a 0.",
+        err_quantity:       "La cantidad debe ser mayor a 0.",
+        lbl_lock:           "Bloquear",
+        lbl_products_count: "productos",
+      },
+      en: {
+        nav_catalog:        "Catalog",
+        nav_panel:          "Panel",
+        cat_all:            "All",
+        cat_aretes:         "Earrings",
+        cat_dijes:          "Charms",
+        cat_anillos:        "Rings",
+        cat_collares:       "Necklaces",
+        cat_bolsas:         "Bags",
+        panel_accounting:   "Accounting",
+        panel_inventory:    "Inventory",
+        form_direction:     "Direction",
+        form_money_in:      "Money In",
+        form_money_out:     "Money Out",
+        form_amount:        "Amount",
+        form_description:   "Description",
+        form_date:          "Date",
+        form_submit:        "Submit",
+        form_loading:       "Sending...",
+        inv_product_in:     "Product In",
+        inv_product_out:    "Product Out",
+        inv_product:        "Product",
+        inv_quantity:       "Quantity",
+        inv_notes:          "Notes",
+        inv_select_prompt:  "— Select a product —",
+        pin_prompt:         "Enter your PIN to access the panel",
+        pin_placeholder:    "Access PIN",
+        pin_unlock:         "Unlock",
+        pin_error:          "⚠ Incorrect PIN",
+        success_msg:        "✓ Submitted successfully",
+        error_msg:          "✗ Submission failed. Please try again.",
+        footer_rights:      "All rights reserved.",
+        page_title:         "Product Catalog",
+        panel_title:        "Management Panel",
+        acc_title:          "Log Cash Flow Entry",
+        inv_title:          "Log Inventory Movement",
+        no_results:         "No products in this category.",
+        err_required:       "This field is required.",
+        err_amount:         "Amount must be greater than 0.",
+        err_quantity:       "Quantity must be greater than 0.",
+        lbl_lock:           "Lock",
+        lbl_products_count: "products",
+      },
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // i18n UTILITIES
+    // ─────────────────────────────────────────────────────────────────────────
+    function getLang() {
+      return document.documentElement.getAttribute("data-lang") || "es";
+    }
+
+    /** Translate a key to the current language. Falls back to Spanish. */
+    function t(key) {
+      const lang = getLang();
+      return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) ||
+             (TRANSLATIONS["es"]  && TRANSLATIONS["es"][key])  ||
+             key;
+    }
+
+    /** Walk the DOM and replace all [data-i18n] text content and placeholders. */
+    function applyTranslations() {
+      // Text content
+      document.querySelectorAll("[data-i18n]").forEach(function (el) {
+        var key  = el.getAttribute("data-i18n");
+        var text = t(key);
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = text;
+        } else {
+          el.textContent = text;
+        }
+      });
+
+      // Dedicated placeholder keys
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+        el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
+      });
+
+      // Update the product select placeholder option
+      var productSelect = document.getElementById("inv-product");
+      if (productSelect && productSelect.options.length > 0) {
+        productSelect.options[0].textContent = t("inv_select_prompt");
+      }
+
+      // Flip the lang-toggle button label
+      var toggleBtn = document.getElementById("lang-toggle");
+      if (toggleBtn) toggleBtn.textContent = getLang() === "es" ? "EN" : "ES";
+    }
+
+    function toggleLang() {
+      var next = getLang() === "es" ? "en" : "es";
+      document.documentElement.setAttribute("data-lang", next);
+      document.documentElement.setAttribute("lang", next);
+      try { localStorage.setItem("lang", next); } catch (e) {}
+      applyTranslations();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SECTION SWITCHER  (Catalog ↔ Panel)
+    // ─────────────────────────────────────────────────────────────────────────
+    function showSection(name) {
+      ["catalog", "panel"].forEach(function (s) {
+        var el  = document.getElementById("section-" + s);
+        var btn = document.getElementById("nav-" + s + "-btn");
+        var isActive = s === name;
+        if (el)  el.classList.toggle("hidden", !isActive);
+        if (btn) {
+          btn.classList.toggle("nav-btn-active", isActive);
+          btn.classList.toggle("text-gray-400", !isActive);
+          btn.classList.toggle("text-rose-300", isActive);
+        }
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TOAST
+    // ─────────────────────────────────────────────────────────────────────────
+    var _toastTimer = null;
+    function showToast(msg, isError) {
+      var toast    = document.getElementById("toast");
+      var toastMsg = document.getElementById("toast-msg");
+      var toastIcon= document.getElementById("toast-icon");
+      var inner    = toast.querySelector("div");
+      if (!toast || !toastMsg) return;
+
+      toastMsg.textContent  = msg;
+      toastIcon.textContent = isError ? "✗" : "✓";
+      inner.style.borderColor = isError ? "rgba(244,63,94,0.4)" : "rgba(16,185,129,0.4)";
+      toastIcon.style.color   = isError ? "#fb7185" : "#34d399";
+
+      toast.classList.add("toast-show");
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(function () {
+        toast.classList.remove("toast-show");
+      }, 3600);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DOM READY
+    // ─────────────────────────────────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", function () {
+      // Apply saved / default language translations
+      applyTranslations();
+
+      // Pre-fill date fields with today
+      var today = new Date().toISOString().split("T")[0];
+      document.querySelectorAll("input[type='date']").forEach(function (el) {
+        if (!el.value) el.value = today;
+      });
+
+      // Default section
+      showSection("catalog");
+    });
+  </script>
+</body>
+</html>

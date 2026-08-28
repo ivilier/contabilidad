@@ -1,0 +1,654 @@
+---
+layout: default
+title: "Catálogo"
+description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión interna de caja e inventario."
+---
+
+{%- comment -%}
+  Build a JS-safe JSON array of all catalog items for the inventory dropdown.
+  Liquid generates this at build time so no client-side fetch is needed.
+{%- endcomment -%}
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     SECTION 1 — PUBLIC CATALOG
+     ════════════════════════════════════════════════════════════════════════════ -->
+<section id="section-catalog" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in">
+
+  <!-- Hero Header -->
+  <div class="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div>
+      <p class="text-rose-400 text-xs font-semibold uppercase tracking-widest mb-2">{{ site.title }}</p>
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-white leading-none" data-i18n="page_title">Catálogo de Productos</h1>
+    </div>
+    <p class="text-zinc-500 text-sm font-medium tabular-nums">
+      <span class="text-zinc-300 font-bold text-xl">{{ site.data.catalog | size }}</span>
+      &nbsp;<span data-i18n="lbl_products_count">productos</span>
+    </p>
+  </div>
+
+  <!-- ── Category Filter Tabs ─────────────────────────────────────────────── -->
+  <div class="flex flex-wrap gap-2 mb-8" role="tablist" aria-label="Filtro de categorías">
+
+    <button role="tab" aria-selected="true"
+      class="cat-btn px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200
+             bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20"
+      data-cat="all" onclick="filterCat(this, 'all')" data-i18n="cat_all">
+      Todo
+    </button>
+
+    {% assign cats = "aretes,dijes,anillos,collares,bolsas" | split: "," %}
+    {% for cat in cats %}
+    <button role="tab" aria-selected="false"
+      class="cat-btn px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200
+             bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-zinc-200"
+      data-cat="{{ cat }}" onclick="filterCat(this, '{{ cat }}')" data-i18n="cat_{{ cat }}">
+      {{ cat | capitalize }}
+    </button>
+    {% endfor %}
+
+  </div>
+
+  <!-- ── Product Grid ─────────────────────────────────────────────────────── -->
+  <div id="catalog-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+
+    {% for item in site.data.catalog %}
+    {%- assign cat = item.category -%}
+    {%- if cat == "aretes"   %}{%- assign badge_cls = "bg-rose-500/15 text-rose-300"    -%}
+    {%- elsif cat == "dijes"   %}{%- assign badge_cls = "bg-violet-500/15 text-violet-300" -%}
+    {%- elsif cat == "anillos" %}{%- assign badge_cls = "bg-amber-500/15 text-amber-300"   -%}
+    {%- elsif cat == "collares"%}{%- assign badge_cls = "bg-emerald-500/15 text-emerald-300"-%}
+    {%- else                   %}{%- assign badge_cls = "bg-sky-500/15 text-sky-300"       -%}
+    {%- endif %}
+
+    <div class="product-card group glass rounded-2xl p-4
+                hover:border-rose-500/30 hover:shadow-xl hover:shadow-rose-500/5
+                hover:-translate-y-0.5 transition-all duration-300"
+         data-category="{{ item.category }}"
+         role="article">
+
+      <!-- Top row: category badge + ref code -->
+      <div class="flex items-start justify-between gap-1 mb-3">
+        <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full {{ badge_cls }}">
+          {{ item.category }}
+        </span>
+        <span class="text-[10px] text-zinc-600 font-mono flex-shrink-0">{{ item.ref_code }}</span>
+      </div>
+
+      <!-- Product name -->
+      <p class="text-xs sm:text-sm font-semibold text-zinc-200 leading-snug mb-4
+                group-hover:text-white transition-colors line-clamp-3">
+        {{ item.description }}
+      </p>
+
+      <!-- Price -->
+      <div class="mt-auto pt-2 border-t border-white/[0.05]">
+        <span class="text-lg font-extrabold text-rose-400 tabular-nums">{{ item.price }}</span>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- Empty-state message (shown by JS when a filter has 0 results) -->
+  <div id="no-results" class="hidden py-20 text-center">
+    <div class="text-5xl mb-4 opacity-40">📭</div>
+    <p class="text-zinc-500 text-sm" data-i18n="no_results">No hay productos en esta categoría.</p>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     SECTION 2 — OWNER MANAGEMENT PANEL
+     ════════════════════════════════════════════════════════════════════════════ -->
+<section id="section-panel" class="hidden max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in">
+
+  <!-- ── PIN Gate ─────────────────────────────────────────────────────────── -->
+  <div id="pin-gate" class="min-h-[65vh] flex items-center justify-center">
+    <div class="glass rounded-3xl p-8 sm:p-10 w-full max-w-sm text-center
+                shadow-2xl shadow-black/40 border-white/[0.06]">
+
+      <!-- Icon -->
+      <div class="w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/20
+                  flex items-center justify-center mx-auto mb-6">
+        <svg class="w-8 h-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+      </div>
+
+      <p class="text-zinc-400 text-sm mb-5 leading-relaxed" data-i18n="pin_prompt">
+        Ingresa tu PIN para acceder al panel
+      </p>
+
+      <!-- PIN input -->
+      <input id="pin-input"
+        type="password"
+        inputmode="numeric"
+        maxlength="8"
+        autocomplete="current-password"
+        class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3.5
+               text-white text-center text-2xl font-mono tracking-[0.35em]
+               focus:outline-none focus:border-rose-500 transition-colors mb-2"
+        data-i18n-placeholder="pin_placeholder"
+        placeholder="PIN de acceso"
+        onkeydown="if(event.key === 'Enter') unlockPanel()" />
+
+      <!-- Error message -->
+      <p id="pin-error" class="text-rose-400 text-xs mb-4 h-4 transition-opacity opacity-0" data-i18n="pin_error">
+        ⚠ PIN incorrecto
+      </p>
+
+      <!-- Unlock button -->
+      <button id="pin-btn" onclick="unlockPanel()"
+        class="w-full bg-rose-500 hover:bg-rose-400 active:scale-[0.98] text-white
+               font-semibold py-3.5 rounded-xl shadow-lg shadow-rose-500/25
+               transition-all duration-150">
+        <span data-i18n="pin_unlock">Desbloquear</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Panel Content (revealed after PIN) ────────────────────────────────── -->
+  <div id="panel-content" class="hidden animate-slide-up">
+
+    <!-- Panel header -->
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-extrabold text-white" data-i18n="panel_title">Panel de Gestión</h1>
+      <button onclick="lockPanel()"
+        class="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-rose-400
+               px-3 py-2 rounded-lg hover:bg-zinc-900 transition-all">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+        <span data-i18n="lbl_lock">Bloquear</span>
+      </button>
+    </div>
+
+    <!-- Panel tab switcher -->
+    <div class="flex gap-1.5 mb-8 p-1.5 bg-zinc-900/80 rounded-2xl w-fit border border-white/[0.05]">
+      <button id="tab-btn-accounting" onclick="switchPanelTab('accounting')"
+        class="panel-tab-btn active-panel-tab px-5 py-2.5 rounded-xl text-sm font-semibold
+               transition-all duration-200">
+        <span data-i18n="panel_accounting">Contabilidad</span>
+      </button>
+      <button id="tab-btn-inventory" onclick="switchPanelTab('inventory')"
+        class="panel-tab-btn px-5 py-2.5 rounded-xl text-sm font-semibold
+               text-zinc-500 hover:text-zinc-300 transition-all duration-200">
+        <span data-i18n="panel_inventory">Inventario</span>
+      </button>
+    </div>
+
+    <!-- ══ ACCOUNTING FORM ════════════════════════════════════════════════ -->
+    <div id="tab-accounting" class="panel-tab-content animate-slide-up">
+      <div class="glass rounded-3xl p-6 sm:p-8 shadow-xl border-white/[0.06]">
+
+        <h2 class="text-lg font-bold text-white mb-7 flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-400 text-base">💰</span>
+          <span data-i18n="acc_title">Registrar Movimiento de Caja</span>
+        </h2>
+
+        <form id="accounting-form" onsubmit="submitAccounting(event)" novalidate autocomplete="off">
+
+          <!-- Honeypot anti-spam field (hidden from real users) -->
+          <input type="text" name="_hp" tabindex="-1" autocomplete="off"
+                 style="display:none" aria-hidden="true" />
+
+          <!-- Direction -->
+          <fieldset class="mb-5">
+            <legend class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3"
+                    data-i18n="form_direction">Dirección</legend>
+            <div class="grid grid-cols-2 gap-3">
+
+              <label class="dir-card dir-in flex items-center gap-3 p-4 rounded-xl border-2
+                            border-zinc-700 cursor-pointer hover:border-emerald-700/60 transition-all duration-200">
+                <input type="radio" name="acc-direction" value="IN" class="sr-only" />
+                <span class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-lg flex-shrink-0">↑</span>
+                <span class="text-sm font-semibold text-zinc-200" data-i18n="form_money_in">Dinero Entra</span>
+              </label>
+
+              <label class="dir-card dir-out flex items-center gap-3 p-4 rounded-xl border-2
+                            border-zinc-700 cursor-pointer hover:border-rose-700/60 transition-all duration-200">
+                <input type="radio" name="acc-direction" value="OUT" class="sr-only" />
+                <span class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 text-lg flex-shrink-0">↓</span>
+                <span class="text-sm font-semibold text-zinc-200" data-i18n="form_money_out">Dinero Sale</span>
+              </label>
+
+            </div>
+            <p id="acc-direction-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+          </fieldset>
+
+          <!-- Amount -->
+          <div class="mb-5">
+            <label for="acc-amount" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                   data-i18n="form_amount">Monto</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold select-none">$</span>
+              <input type="number" id="acc-amount" name="acc-amount"
+                     min="0.01" step="0.01"
+                     class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl pl-9 pr-4 py-3.5
+                            text-white focus:outline-none focus:border-rose-500 transition-colors"
+                     placeholder="0.00" />
+            </div>
+            <p id="acc-amount-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_amount">El monto debe ser mayor a 0.</p>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-5">
+            <label for="acc-desc" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                   data-i18n="form_description">Descripción</label>
+            <input type="text" id="acc-desc" name="acc-desc" maxlength="200"
+                   class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
+                          text-white focus:outline-none focus:border-rose-500 transition-colors"
+                   data-i18n-placeholder="form_description" placeholder="Descripción" />
+            <p id="acc-desc-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+          </div>
+
+          <!-- Date -->
+          <div class="mb-8">
+            <label for="acc-date" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                   data-i18n="form_date">Fecha</label>
+            <input type="date" id="acc-date" name="acc-date"
+                   class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
+                          text-white focus:outline-none focus:border-rose-500 transition-colors" />
+            <p id="acc-date-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" id="acc-submit-btn"
+            class="w-full bg-rose-500 hover:bg-rose-400 disabled:opacity-40 disabled:cursor-not-allowed
+                   text-white font-semibold py-4 rounded-xl shadow-lg shadow-rose-500/20
+                   transition-all duration-150 active:scale-[0.98]
+                   flex items-center justify-center gap-2.5">
+            <span id="acc-btn-text" data-i18n="form_submit">Registrar</span>
+            <span id="acc-spinner" class="spinner hidden"></span>
+          </button>
+
+        </form>
+      </div>
+    </div><!-- /#tab-accounting -->
+
+    <!-- ══ INVENTORY FORM ═════════════════════════════════════════════════ -->
+    <div id="tab-inventory" class="panel-tab-content hidden animate-slide-up">
+      <div class="glass rounded-3xl p-6 sm:p-8 shadow-xl border-white/[0.06]">
+
+        <h2 class="text-lg font-bold text-white mb-7 flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-400 text-base">📦</span>
+          <span data-i18n="inv_title">Registrar Movimiento de Inventario</span>
+        </h2>
+
+        <form id="inventory-form" onsubmit="submitInventory(event)" novalidate autocomplete="off">
+
+          <!-- Honeypot anti-spam field (hidden from real users) -->
+          <input type="text" name="_hp" tabindex="-1" autocomplete="off"
+                 style="display:none" aria-hidden="true" />
+
+          <!-- Direction -->
+          <fieldset class="mb-5">
+            <legend class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3"
+                    data-i18n="form_direction">Dirección</legend>
+            <div class="grid grid-cols-2 gap-3">
+
+              <label class="dir-card dir-in flex items-center gap-3 p-4 rounded-xl border-2
+                            border-zinc-700 cursor-pointer hover:border-emerald-700/60 transition-all duration-200">
+                <input type="radio" name="inv-direction" value="IN" class="sr-only" />
+                <span class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-lg flex-shrink-0">↑</span>
+                <span class="text-sm font-semibold text-zinc-200" data-i18n="inv_product_in">Producto Entra</span>
+              </label>
+
+              <label class="dir-card dir-out flex items-center gap-3 p-4 rounded-xl border-2
+                            border-zinc-700 cursor-pointer hover:border-rose-700/60 transition-all duration-200">
+                <input type="radio" name="inv-direction" value="OUT" class="sr-only" />
+                <span class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 text-lg flex-shrink-0">↓</span>
+                <span class="text-sm font-semibold text-zinc-200" data-i18n="inv_product_out">Producto Sale</span>
+              </label>
+
+            </div>
+            <p id="inv-direction-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+          </fieldset>
+
+          <!-- Product Selector (populated from Liquid at build time) -->
+          <div class="mb-5">
+            <label for="inv-product" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                   data-i18n="inv_product">Producto</label>
+            <select id="inv-product" name="inv-product"
+              class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
+                     text-white focus:outline-none focus:border-rose-500 transition-colors
+                     appearance-none pr-10">
+              <option value="" disabled selected>— Selecciona un producto —</option>
+              {%- for item in site.data.catalog -%}
+              <option value="{{ item.ref_code }}"
+                      data-desc="{{ item.description | escape }}"
+                      data-price="{{ item.price }}"
+                      data-cat="{{ item.category }}">
+                {{ item.ref_code }} — {{ item.description }} ({{ item.price }})
+              </option>
+              {%- endfor -%}
+            </select>
+            <p id="inv-product-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+          </div>
+
+          <!-- Quantity -->
+          <div class="mb-5">
+            <label for="inv-qty" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                   data-i18n="inv_quantity">Cantidad</label>
+            <input type="number" id="inv-qty" name="inv-qty" min="1" step="1"
+                   class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
+                          text-white focus:outline-none focus:border-rose-500 transition-colors"
+                   placeholder="1" />
+            <p id="inv-qty-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_quantity">La cantidad debe ser mayor a 0.</p>
+          </div>
+
+          <!-- Notes -->
+          <div class="mb-5">
+            <label for="inv-notes" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                   data-i18n="inv_notes">Notas</label>
+            <textarea id="inv-notes" name="inv-notes" rows="2" maxlength="300"
+                      class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
+                             text-white focus:outline-none focus:border-rose-500 transition-colors resize-none"
+                      data-i18n-placeholder="inv_notes" placeholder="Notas"></textarea>
+          </div>
+
+          <!-- Date -->
+          <div class="mb-8">
+            <label for="inv-date" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                   data-i18n="form_date">Fecha</label>
+            <input type="date" id="inv-date" name="inv-date"
+                   class="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3.5
+                          text-white focus:outline-none focus:border-rose-500 transition-colors" />
+            <p id="inv-date-err" class="err-msg text-rose-400 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" id="inv-submit-btn"
+            class="w-full bg-rose-500 hover:bg-rose-400 disabled:opacity-40 disabled:cursor-not-allowed
+                   text-white font-semibold py-4 rounded-xl shadow-lg shadow-rose-500/20
+                   transition-all duration-150 active:scale-[0.98]
+                   flex items-center justify-center gap-2.5">
+            <span id="inv-btn-text" data-i18n="form_submit">Registrar</span>
+            <span id="inv-spinner" class="spinner hidden"></span>
+          </button>
+
+        </form>
+      </div>
+    </div><!-- /#tab-inventory -->
+
+  </div><!-- /#panel-content -->
+
+</section><!-- /#section-panel -->
+
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     PAGE-LEVEL JAVASCRIPT
+     ════════════════════════════════════════════════════════════════════════════ -->
+<style>
+  /* Active panel tab state */
+  .active-panel-tab {
+    background: #f43f5e;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(244,63,94,0.35);
+  }
+</style>
+
+<script>
+  // ─────────────────────────────────────────────────────────────────────────
+  // PIN GATE
+  // ─────────────────────────────────────────────────────────────────────────
+  function unlockPanel() {
+    var input = document.getElementById("pin-input");
+    var errEl = document.getElementById("pin-error");
+    if (input.value === ACCESS_PIN) {
+      document.getElementById("pin-gate").classList.add("hidden");
+      document.getElementById("panel-content").classList.remove("hidden");
+      errEl.style.opacity = "0";
+    } else {
+      errEl.style.opacity = "1";
+      input.value = "";
+      input.focus();
+      // Brief shake animation
+      input.style.transform = "translateX(-4px)";
+      setTimeout(function() { input.style.transform = "translateX(4px)"; }, 60);
+      setTimeout(function() { input.style.transform = ""; }, 120);
+    }
+  }
+
+  function lockPanel() {
+    document.getElementById("pin-gate").classList.remove("hidden");
+    document.getElementById("panel-content").classList.add("hidden");
+    document.getElementById("pin-input").value = "";
+    document.getElementById("pin-error").style.opacity = "0";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PANEL TAB SWITCHER
+  // ─────────────────────────────────────────────────────────────────────────
+  function switchPanelTab(tab) {
+    document.querySelectorAll(".panel-tab-content").forEach(function(el) {
+      el.classList.add("hidden");
+    });
+    document.querySelectorAll(".panel-tab-btn").forEach(function(btn) {
+      btn.classList.remove("active-panel-tab");
+      btn.classList.add("text-zinc-500");
+      btn.classList.remove("text-white");
+    });
+
+    document.getElementById("tab-" + tab).classList.remove("hidden");
+    var activeBtn = document.getElementById("tab-btn-" + tab);
+    activeBtn.classList.add("active-panel-tab");
+    activeBtn.classList.remove("text-zinc-500");
+    activeBtn.classList.add("text-white");
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CATALOG CATEGORY FILTER
+  // ─────────────────────────────────────────────────────────────────────────
+  function filterCat(activeBtn, cat) {
+    var cards = document.querySelectorAll(".product-card");
+    var visible = 0;
+    cards.forEach(function(card) {
+      var show = cat === "all" || card.dataset.category === cat;
+      card.style.display = show ? "" : "none";
+      if (show) visible++;
+    });
+    document.getElementById("no-results").classList.toggle("hidden", visible > 0);
+
+    // Update button styles
+    document.querySelectorAll(".cat-btn").forEach(function(btn) {
+      var isActive = btn === activeBtn;
+      if (isActive) {
+        btn.className = btn.className
+          .replace("bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-zinc-200", "")
+          + " bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20";
+        btn.setAttribute("aria-selected", "true");
+      } else {
+        btn.className = btn.className
+          .replace("bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20", "")
+          + " bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-zinc-200";
+        btn.setAttribute("aria-selected", "false");
+      }
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DIRECTION RADIO CARDS — visual selection feedback
+  // ─────────────────────────────────────────────────────────────────────────
+  document.querySelectorAll(".dir-card input[type='radio']").forEach(function(radio) {
+    radio.addEventListener("change", function() {
+      var group = this.closest("fieldset") || this.closest("div");
+      group.querySelectorAll(".dir-card").forEach(function(card) {
+        card.classList.remove(
+          "border-emerald-500", "bg-emerald-500/10",
+          "border-rose-500",    "bg-rose-500/10"
+        );
+        card.classList.add("border-zinc-700");
+      });
+      var label = this.closest(".dir-card");
+      label.classList.remove("border-zinc-700");
+      if (this.value === "IN") {
+        label.classList.add("border-emerald-500", "bg-emerald-500/10");
+      } else {
+        label.classList.add("border-rose-500", "bg-rose-500/10");
+      }
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FORM HELPERS
+  // ─────────────────────────────────────────────────────────────────────────
+  function setErr(id, show) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle("hidden", !show);
+  }
+
+  function setLoading(prefix, isLoading) {
+    var btn     = document.getElementById(prefix + "-submit-btn");
+    var spinner = document.getElementById(prefix + "-spinner");
+    var text    = document.getElementById(prefix + "-btn-text");
+    btn.disabled = isLoading;
+    spinner.classList.toggle("hidden", !isLoading);
+    text.textContent = isLoading ? t("form_loading") : t("form_submit");
+  }
+
+  function resetDateField(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = new Date().toISOString().split("T")[0];
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ACCOUNTING FORM — Validation & Submit
+  // ─────────────────────────────────────────────────────────────────────────
+  function validateAccounting() {
+    var direction = document.querySelector("input[name='acc-direction']:checked");
+    var amount    = document.getElementById("acc-amount");
+    var desc      = document.getElementById("acc-desc");
+    var date      = document.getElementById("acc-date");
+    var ok = true;
+
+    setErr("acc-direction-err", !direction);
+    if (!direction) ok = false;
+
+    var amtVal = parseFloat(amount.value);
+    setErr("acc-amount-err", !amount.value || isNaN(amtVal) || amtVal <= 0);
+    if (!amount.value || isNaN(amtVal) || amtVal <= 0) ok = false;
+
+    setErr("acc-desc-err", !desc.value.trim());
+    if (!desc.value.trim()) ok = false;
+
+    setErr("acc-date-err", !date.value);
+    if (!date.value) ok = false;
+
+    return ok;
+  }
+
+  async function submitAccounting(e) {
+    e.preventDefault();
+    if (!validateAccounting()) return;
+
+    // Honeypot guard
+    if (document.querySelector("#accounting-form input[name='_hp']").value) return;
+
+    setLoading("acc", true);
+
+    var payload = {
+      direction:   document.querySelector("input[name='acc-direction']:checked").value,
+      amount:      document.getElementById("acc-amount").value,
+      description: document.getElementById("acc-desc").value.trim(),
+      date:        document.getElementById("acc-date").value,
+    };
+
+    try {
+      var res  = await fetch(SCRIPT_URLS.accounting, {
+        method:   "POST",
+        redirect: "follow",
+        body:     JSON.stringify(payload),
+      });
+      var data = await res.json();
+      if (data.status === "ok") {
+        showToast(t("success_msg"), false);
+        document.getElementById("accounting-form").reset();
+        resetDateField("acc-date");
+      } else {
+        showToast(t("error_msg"), true);
+        console.error("Accounting script error:", data.message);
+      }
+    } catch (err) {
+      showToast(t("error_msg"), true);
+      console.error("Accounting fetch error:", err);
+    } finally {
+      setLoading("acc", false);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVENTORY FORM — Validation & Submit
+  // ─────────────────────────────────────────────────────────────────────────
+  function validateInventory() {
+    var direction = document.querySelector("input[name='inv-direction']:checked");
+    var product   = document.getElementById("inv-product");
+    var qty       = document.getElementById("inv-qty");
+    var date      = document.getElementById("inv-date");
+    var ok = true;
+
+    setErr("inv-direction-err", !direction);
+    if (!direction) ok = false;
+
+    setErr("inv-product-err", !product.value);
+    if (!product.value) ok = false;
+
+    var qtyVal = parseInt(qty.value, 10);
+    setErr("inv-qty-err", !qty.value || isNaN(qtyVal) || qtyVal < 1);
+    if (!qty.value || isNaN(qtyVal) || qtyVal < 1) ok = false;
+
+    setErr("inv-date-err", !date.value);
+    if (!date.value) ok = false;
+
+    return ok;
+  }
+
+  async function submitInventory(e) {
+    e.preventDefault();
+    if (!validateInventory()) return;
+
+    // Honeypot guard
+    if (document.querySelector("#inventory-form input[name='_hp']").value) return;
+
+    setLoading("inv", true);
+
+    var productSelect  = document.getElementById("inv-product");
+    var selectedOption = productSelect.options[productSelect.selectedIndex];
+
+    var payload = {
+      direction:   document.querySelector("input[name='inv-direction']:checked").value,
+      ref_code:    productSelect.value,
+      description: selectedOption.dataset.desc  || "",
+      price:       selectedOption.dataset.price  || "",
+      category:    selectedOption.dataset.cat    || "",
+      quantity:    document.getElementById("inv-qty").value,
+      notes:       document.getElementById("inv-notes").value.trim(),
+      date:        document.getElementById("inv-date").value,
+    };
+
+    try {
+      var res  = await fetch(SCRIPT_URLS.inventory, {
+        method:   "POST",
+        redirect: "follow",
+        body:     JSON.stringify(payload),
+      });
+      var data = await res.json();
+      if (data.status === "ok") {
+        showToast(t("success_msg"), false);
+        document.getElementById("inventory-form").reset();
+        resetDateField("inv-date");
+      } else {
+        showToast(t("error_msg"), true);
+        console.error("Inventory script error:", data.message);
+      }
+    } catch (err) {
+      showToast(t("error_msg"), true);
+      console.error("Inventory fetch error:", err);
+    } finally {
+      setLoading("inv", false);
+    }
+  }
+</script>

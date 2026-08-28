@@ -1,0 +1,32 @@
+# ── Site identity ─────────────────────────────────────────────────────────────
+title: "Mi Tienda"
+description: "Catálogo de productos y gestión interna de caja e inventario."
+# IMPORTANT: Set your GitHub Pages URL and repo name before deploying.
+# If the repo IS your user/org page (username.github.io), set baseurl to "".
+url: "https://your-username.github.io"   # e.g. https://javier.github.io
+baseurl: "/contabilidad"                 # e.g. "" for user pages, "/repo-name" for project pages
+
+# ── Build settings ────────────────────────────────────────────────────────────
+markdown: kramdown
+lang: es
+timezone: America/Mexico_City
+
+# ── Plugins ───────────────────────────────────────────────────────────────────
+plugins:
+  - jekyll-sitemap
+
+# ── Permalink style ───────────────────────────────────────────────────────────
+permalink: pretty
+
+# ── Exclude from build output ─────────────────────────────────────────────────
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - prompt.md
+  - _docs/
+  - .github/
+  - .gitignore
+  - vendor/
+  - node_modules/
+  - "*.sh"
