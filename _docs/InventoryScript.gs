@@ -1,97 +1,137 @@
 /**
- * InventoryScript.gs
+ * InventoryScript.gs — Opción 1 (Pestañas separadas por Categoría - Batch Optimizado)
  * ─────────────────────────────────────────────────────────────────────────────
- * Google Apps Script Web App — Inventory Workbook
+ * Google Apps Script Web App — Libro de Inventario de ivilier Joyería
  *
- * PURPOSE
- *   Acts as a serverless API bridge between the static Jekyll site and a
- *   private Google Sheets workbook. Handles POST (append stock movement) and
- *   GET (read last N rows as JSON, optionally filtered by ref_code).
+ * ESTRUCTURA DEL LIBRO DE GOOGLE SHEETS
+ *   Crea y gestiona automáticamente 10 pestañas dedicadas por categoría:
+ *     1.  Aretes
+ *     2.  Anillos
+ *     3.  Bolsas
+ *     4.  Dijes
+ *     5.  Cadenas
+ *     6.  Arracadas
+ *     7.  Ear Cuff
+ *     8.  Pulseras
+ *     9.  Tobilleras
+ *     10. Esmeraldas
  *
- * DEPLOY SETTINGS
- *   New deployment → Web app
- *   Execute as   : Me  (uses the spreadsheet owner's credentials)
- *   Who can access: Anyone  (allows anonymous calls from the static site)
+ * ENCABEZADOS POR PESTAÑA:
+ *   Timestamp | Direction | Ref Code | Description | Price | Category | Quantity | Notes | Date
  *
- * SHEET STRUCTURE  (auto-created on first run)
- *   Sheet name : InventoryLog
- *   Columns    : Timestamp | Direction | Ref Code | Description |
- *                Price | Category | Quantity | Notes | Date
+ * CONFIGURACIÓN DE DESPLIEGUE EN APPS SCRIPT:
+ *   Implementar → Nueva implementación → Tipo: Aplicación web
+ *   Ejecutar como : Yo (tu cuenta de Google)
+ *   Quién tiene acceso: Cualquier usuario (Anyone)
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-var SHEET_NAME = "InventoryLog";
-var HEADERS    = [
+// ── MAPEADOR DE CATEGORÍAS Y NOMBRES DE PESTAÑAS ──────────────────────────────
+var CATEGORY_TABS = {
+  "aretes":     { name: "Aretes",     color: "#f43f5e" }, // Rose
+  "anillos":    { name: "Anillos",    color: "#10b981" }, // Emerald
+  "bolsas":     { name: "Bolsas",     color: "#8b5cf6" }, // Violet
+  "dijes":      { name: "Dijes",      color: "#f59e0b" }, // Amber
+  "cadenas":    { name: "Cadenas",    color: "#6366f1" }, // Indigo
+  "arracadas":  { name: "Arracadas",  color: "#ec4899" }, // Pink
+  "ear_cuff":   { name: "Ear Cuff",   color: "#14b8a6" }, // Teal
+  "pulseras":   { name: "Pulseras",   color: "#06b6d4" }, // Cyan
+  "tobilleras": { name: "Tobilleras", color: "#3b82f6" }, // Blue
+  "esmeraldas": { name: "Esmeraldas", color: "#22c55e" }, // Green
+};
+
+var HEADERS = [
   "Timestamp", "Direction", "Ref Code", "Description",
   "Price", "Category", "Quantity", "Notes", "Date"
 ];
 
-// ── AUTHENTICATION TOKEN ──────────────────────────────────────────────────────
-// Change this to your private PIN or secure password.
-// Alternatively, set it in Project Settings → Script Properties with key "AUTH_TOKEN".
+// ── TOKEN / PIN DE AUTENTICACIÓN ──────────────────────────────────────────────
 var AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
 
 /**
- * Validates the authentication token sent in GET query params or POST body.
- * @param  {Object} e
- * @param  {Object} postData
- * @return {boolean}
+ * Valida el token o PIN enviado en la petición.
  */
 function isAuthorized_(e, postData) {
   var provided = (e && e.parameter && e.parameter.auth) || (postData && postData.auth);
   return String(provided || "").trim() === String(AUTH_TOKEN).trim();
 }
 
+/**
+ * Normaliza la clave de categoría para buscar su pestaña correspondiente.
+ */
+function getTabInfoForCategory_(rawCategory) {
+  var key = String(rawCategory || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return CATEGORY_TABS[key] || { name: rawCategory || "General", color: "#475569" };
+}
 
-// ══ POST — Append a new inventory movement row ════════════════════════════════
+
+// ══ POST — Registrar movimiento en la pestaña de su categoría ═════════════════
 function doPost(e) {
   try {
-    // Parse JSON body sent by the client fetch()
     var raw = e.postData && e.postData.contents;
-    if (!raw) return jsonResponse({ status: "error", message: "Empty request body" });
+    if (!raw) return jsonResponse({ status: "error", message: "Cuerpo de solicitud vacío" });
 
     var data = JSON.parse(raw);
 
-    // ── Authentication guard ────────────────────────────────────────────────
+    // ── Guard de autenticación ──────────────────────────────────────────────
     if (!isAuthorized_(e, data)) {
       return jsonResponse({ status: "unauthorized", message: "Acceso no autorizado" });
     }
 
-    // ── Honeypot guard ──────────────────────────────────────────────────────
+    // ── Guard Honeypot contra bots ──────────────────────────────────────────
     if (data._hp && data._hp !== "") {
-      return jsonResponse({ status: "ignored", message: "Honeypot triggered" });
+      return jsonResponse({ status: "ignored", message: "Honeypot detectado" });
     }
 
-    // ── Required-field validation ───────────────────────────────────────────
-    if (!data.direction || (data.direction !== "IN" && data.direction !== "OUT")) {
-      return jsonResponse({ status: "error", message: "Invalid or missing direction" });
-    }
-    if (!data.ref_code || !data.ref_code.trim()) {
-      return jsonResponse({ status: "error", message: "Missing ref_code" });
-    }
-    var qty = parseInt(data.quantity, 10);
-    if (isNaN(qty) || qty < 1) {
-      return jsonResponse({ status: "error", message: "Invalid quantity" });
-    }
-    if (!data.date) {
-      return jsonResponse({ status: "error", message: "Missing date" });
+    var items = data.items && Array.isArray(data.items) ? data.items : [data];
+    var grouped = {};
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+
+      if (!item.direction || (item.direction !== "IN" && item.direction !== "OUT")) {
+        return jsonResponse({ status: "error", message: "Dirección inválida (use IN o OUT)" });
+      }
+      if (!item.ref_code || !item.ref_code.trim()) {
+        return jsonResponse({ status: "error", message: "Falta ref_code" });
+      }
+      var qty = parseInt(item.quantity, 10);
+      if (isNaN(qty) || qty < 1) {
+        return jsonResponse({ status: "error", message: "Cantidad inválida" });
+      }
+      if (!item.date) {
+        return jsonResponse({ status: "error", message: "Falta fecha" });
+      }
+
+      var tabInfo = getTabInfoForCategory_(item.category);
+      var tabName = tabInfo.name;
+      if (!grouped[tabName]) grouped[tabName] = { info: tabInfo, rows: [] };
+
+      grouped[tabName].rows.push([
+        new Date().toISOString(),
+        item.direction,
+        item.ref_code.trim().toUpperCase(),
+        (item.description || "").trim(),
+        (item.price       || "").trim(),
+        (item.category    || "").trim(),
+        qty,
+        (item.notes || "").trim(),
+        item.date,
+      ]);
     }
 
-    // ── Append row ──────────────────────────────────────────────────────────
-    var sheet = getOrCreateSheet_();
-    sheet.appendRow([
-      new Date().toISOString(),         // Timestamp — server-side UTC
-      data.direction,                    // "IN" or "OUT"
-      data.ref_code.trim().toUpperCase(),// Normalized product ref code
-      (data.description || "").trim(),   // Product description from catalog
-      (data.price       || "").trim(),   // Price string (e.g. "$14")
-      (data.category    || "").trim(),   // Category (aretes, dijes, etc.)
-      qty,                               // Integer quantity
-      (data.notes || "").trim(),         // Optional free-text notes
-      data.date,                         // Client date string (YYYY-MM-DD)
-    ]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    Object.keys(grouped).forEach(function(tabName) {
+      var g = grouped[tabName];
+      var sheet = getOrCreateCategorySheet_(ss, tabName, g.info.color);
+      var startRow = sheet.getLastRow() + 1;
+      sheet.getRange(startRow, 1, g.rows.length, HEADERS.length).setValues(g.rows);
+    });
 
-    return jsonResponse({ status: "ok", message: "Row appended successfully" });
+    return jsonResponse({
+      status: "ok",
+      message: "Registrado con éxito (" + items.length + " movimiento(s))"
+    });
 
   } catch (err) {
     Logger.log("doPost error: " + err.toString());
@@ -100,18 +140,10 @@ function doPost(e) {
 }
 
 
-// ══ GET — Return the last N rows as JSON + stock summary ══════════════════════
-//
-// Query parameters:
-//   ?auth=1234            — required authentication token
-//   ?limit=50             — number of rows to return (default 50, max 500)
-//   ?ref_code=E0001       — filter to a specific product
-//   ?direction=OUT        — filter by movement direction: IN or OUT
-//   ?category=aretes      — filter by product category
-//
+// ══ GET — Leer movimientos y calcular stock consolidado por pestañas ══════════
 function doGet(e) {
   try {
-    // ── Authentication guard ────────────────────────────────────────────────
+    // ── Guard de autenticación ──────────────────────────────────────────────
     if (!isAuthorized_(e, null)) {
       return jsonResponse({ status: "unauthorized", message: "Acceso no autorizado" });
     }
@@ -122,57 +154,74 @@ function doGet(e) {
     var dirFilter = params.direction  || null;
     var catFilter = params.category   || null;
 
-    var sheet = getOrCreateSheet_();
-    var all   = sheet.getDataRange().getValues();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetsToRead = [];
 
-    if (all.length <= 1) {
-      return jsonResponse({
-        status: "ok",
-        rows: [],
-        total: 0,
-        stockSummary: {},
-        totalMovements: 0
+    if (catFilter) {
+      var info = getTabInfoForCategory_(catFilter);
+      var s = ss.getSheetByName(info.name);
+      if (s) sheetsToRead.push(s);
+    } else {
+      Object.keys(CATEGORY_TABS).forEach(function(k) {
+        var name = CATEGORY_TABS[k].name;
+        var s = ss.getSheetByName(name);
+        if (s) sheetsToRead.push(s);
       });
+
+      // Incluir también la hoja InventoryLog si aún tiene registros pendientes
+      var legacySheet = ss.getSheetByName("InventoryLog");
+      if (legacySheet && sheetsToRead.indexOf(legacySheet) === -1) {
+        sheetsToRead.push(legacySheet);
+      }
     }
 
-    var headers = all[0];
+    var allRows = [];
     var stockSummary = {};
 
-    var allRows = all.slice(1).map(function(row) {
-      var obj = {};
-      headers.forEach(function(h, i) { obj[h] = row[i]; });
+    sheetsToRead.forEach(function(sheet) {
+      var lastRow = sheet.getLastRow();
+      var lastCol = sheet.getLastColumn();
+      if (lastRow <= 1 || lastCol < 1) return;
 
-      var code = String(obj["Ref Code"] || "").trim().toUpperCase();
-      var qty  = parseInt(obj["Quantity"], 10) || 0;
-      var dir  = String(obj["Direction"] || "").toUpperCase();
+      var all = sheet.getRange(1, 1, lastRow, Math.max(lastCol, HEADERS.length)).getValues();
+      var headers = all[0];
 
-      if (code) {
-        if (!stockSummary[code]) {
-          stockSummary[code] = {
-            ref_code:     code,
-            description:  obj["Description"] || "",
-            price:        obj["Price"] || "",
-            category:     obj["Category"] || "",
-            totalIn:      0,
-            totalOut:     0,
-            currentStock: 0
-          };
+      for (var r = 1; r < all.length; r++) {
+        var row = all[r];
+        var obj = {};
+        headers.forEach(function(h, i) { obj[h] = row[i]; });
+
+        var code = String(obj["Ref Code"] || "").trim().toUpperCase();
+        var qty  = parseInt(obj["Quantity"], 10) || 0;
+        var dir  = String(obj["Direction"] || "").toUpperCase();
+
+        if (code) {
+          if (!stockSummary[code]) {
+            stockSummary[code] = {
+              ref_code:     code,
+              description:  obj["Description"] || "",
+              price:        obj["Price"] || "",
+              category:     obj["Category"] || "",
+              totalIn:      0,
+              totalOut:     0,
+              currentStock: 0
+            };
+          }
+          if (dir === "IN") {
+            stockSummary[code].totalIn += qty;
+            stockSummary[code].currentStock += qty;
+          } else if (dir === "OUT") {
+            stockSummary[code].totalOut += qty;
+            stockSummary[code].currentStock -= qty;
+          }
         }
-        if (dir === "IN") {
-          stockSummary[code].totalIn += qty;
-          stockSummary[code].currentStock += qty;
-        } else if (dir === "OUT") {
-          stockSummary[code].totalOut += qty;
-          stockSummary[code].currentStock -= qty;
-        }
+
+        allRows.push(obj);
       }
-
-      return obj;
     });
 
     var filteredRows = allRows;
 
-    // Apply optional filters
     if (refFilter) {
       filteredRows = filteredRows.filter(function(r) {
         return String(r["Ref Code"]).toUpperCase() === refFilter.toUpperCase();
@@ -181,14 +230,14 @@ function doGet(e) {
     if (dirFilter === "IN" || dirFilter === "OUT") {
       filteredRows = filteredRows.filter(function(r) { return r["Direction"] === dirFilter; });
     }
-    if (catFilter) {
-      filteredRows = filteredRows.filter(function(r) {
-        return String(r["Category"]).toLowerCase() === catFilter.toLowerCase();
-      });
-    }
 
-    // Most recent first, capped at limit
-    var recentRows = filteredRows.slice().reverse().slice(0, limit);
+    filteredRows.sort(function(a, b) {
+      var tA = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
+      var tB = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
+      return tB - tA;
+    });
+
+    var recentRows = filteredRows.slice(0, limit);
 
     return jsonResponse({
       status: "ok",
@@ -205,48 +254,112 @@ function doGet(e) {
 }
 
 
-// ══ PRIVATE HELPERS ═══════════════════════════════════════════════════════════
+// ══ UTILIDADES Y MIGRACIÓN OPTIMIZADA POR LOTES ═══════════════════════════════
 
 /**
- * Returns the InventoryLog sheet, creating and styling it if it doesn't exist.
- * @return {GoogleAppsScript.Spreadsheet.Sheet}
+ * Obtiene o crea la pestaña de la categoría indicada y le aplica diseño.
  */
-function getOrCreateSheet_() {
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_NAME);
+function getOrCreateCategorySheet_(ss, tabName, colorHex) {
+  var sheet = ss.getSheetByName(tabName);
 
   if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(HEADERS);
+    sheet = ss.insertSheet(tabName);
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
     sheet.setFrozenRows(1);
 
-    // Style the header row
+    if (colorHex) {
+      try { sheet.setTabColor(colorHex); } catch (e) {}
+    }
+
     var headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
-    headerRange.setBackground("#f43f5e");    // rose-500
+    headerRange.setBackground(colorHex || "#1f2937");
     headerRange.setFontColor("#ffffff");
     headerRange.setFontWeight("bold");
-    headerRange.setFontSize(11);
+    headerRange.setFontSize(10);
 
-    // Column widths
-    sheet.setColumnWidth(1, 220); // Timestamp
-    sheet.setColumnWidth(2, 90);  // Direction
-    sheet.setColumnWidth(3, 100); // Ref Code
-    sheet.setColumnWidth(4, 260); // Description
-    sheet.setColumnWidth(5, 80);  // Price
-    sheet.setColumnWidth(6, 100); // Category
-    sheet.setColumnWidth(7, 80);  // Quantity
-    sheet.setColumnWidth(8, 220); // Notes
-    sheet.setColumnWidth(9, 110); // Date
+    try {
+      sheet.setColumnWidth(1, 200); // Timestamp
+      sheet.setColumnWidth(2, 85);  // Direction
+      sheet.setColumnWidth(3, 95);  // Ref Code
+      sheet.setColumnWidth(4, 250); // Description
+      sheet.setColumnWidth(5, 75);  // Price
+      sheet.setColumnWidth(6, 95);  // Category
+      sheet.setColumnWidth(7, 75);  // Quantity
+      sheet.setColumnWidth(8, 200); // Notes
+      sheet.setColumnWidth(9, 105); // Date
+    } catch (e) {}
   }
 
   return sheet;
 }
 
 /**
- * Serializes an object to a JSON ContentService response.
- * @param  {Object} obj
- * @return {GoogleAppsScript.Content.TextOutput}
+ * Inicializa las 10 pestañas de categorías con diseño en un solo paso.
  */
+function initializeAllCategoryTabs() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.keys(CATEGORY_TABS).forEach(function(key) {
+    var tab = CATEGORY_TABS[key];
+    getOrCreateCategorySheet_(ss, tab.name, tab.color);
+  });
+  Logger.log("✓ Las 10 pestañas de categorías han sido inicializadas correctamente.");
+}
+
+/**
+ * Migra los registros existentes en 'InventoryLog' agrupándolos en memoria
+ * e insertándolos por lotes (Batch) en menos de 1 segundo sin errores.
+ */
+function migrateExistingRowsToCategoryTabs() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var legacy = ss.getSheetByName("InventoryLog");
+
+  if (!legacy) {
+    Logger.log("No se encontró la hoja 'InventoryLog'. Nada que migrar.");
+    return;
+  }
+
+  var lastRow = legacy.getLastRow();
+  var lastCol = legacy.getLastColumn();
+  if (lastRow <= 1 || lastCol < 1) {
+    Logger.log("La hoja 'InventoryLog' no tiene filas de datos para migrar.");
+    return;
+  }
+
+  var all = legacy.getRange(1, 1, lastRow, Math.max(lastCol, HEADERS.length)).getValues();
+  var headers = all[0];
+  var catColIdx = headers.indexOf("Category");
+  if (catColIdx === -1) catColIdx = 5;
+
+  // Agrupar filas por pestaña de categoría
+  var grouped = {};
+  for (var i = 1; i < all.length; i++) {
+    var row = all[i];
+    var rawCat = String(row[catColIdx] || "").trim();
+    var tabInfo = getTabInfoForCategory_(rawCat);
+    var tabName = tabInfo.name;
+
+    if (!grouped[tabName]) {
+      grouped[tabName] = { info: tabInfo, rows: [] };
+    }
+    grouped[tabName].rows.push(row);
+  }
+
+  // Escribir en lote en cada pestaña
+  var totalMigrated = 0;
+  Object.keys(grouped).forEach(function(tabName) {
+    var g = grouped[tabName];
+    if (!g.rows || g.rows.length === 0) return;
+
+    var sheet = getOrCreateCategorySheet_(ss, tabName, g.info.color);
+    var startRow = sheet.getLastRow() + 1;
+    sheet.getRange(startRow, 1, g.rows.length, HEADERS.length).setValues(g.rows);
+    totalMigrated += g.rows.length;
+    Logger.log("✓ " + tabName + ": " + g.rows.length + " filas migradas.");
+  });
+
+  Logger.log("✓ Migración completada con éxito. Total: " + totalMigrated + " registros distribuidos en sus pestañas.");
+}
+
 function jsonResponse(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))

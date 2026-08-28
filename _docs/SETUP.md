@@ -76,6 +76,7 @@ Repeat the exact same steps (2.1–2.2) but:
 - Name the workbook **`Contabilidad - Inventario`**
 - Paste [`_docs/InventoryScript.gs`](./_docs/InventoryScript.gs) instead
 - Set the same `AUTH_TOKEN` (in code or in Script Properties)
+- *(Opcional / Recomendado)* Para crear de inmediato las 10 pestañas por categoría con sus colores y estilos, selecciona la función `initializeAllCategoryTabs` en la barra superior de Apps Script y haz clic en **Ejecutar**. Si ya tienes registros en `InventoryLog`, selecciona `migrateExistingRowsToCategoryTabs` y haz clic en **Ejecutar** para distribuirlos en sus pestañas.
 
 Keep both Web App URLs handy.
 
