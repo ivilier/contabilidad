@@ -252,8 +252,30 @@
       inventory:  "https://script.google.com/macros/s/AKfycbxMcTrTFtmxSw_IIET-ZX-uoZxFCJp-IixvyiBB0LUhgJ8IyCF5loQQZ6b77iWx0Z0g/exec",   // Paste Inventory Web App URL here
     };
 
-    // Owner panel PIN — change this before deploying
-    const ACCESS_PIN = "1234";
+    // ─────────────────────────────────────────────────────────────────────────
+    // AUTHENTICATION UTILITIES (Backend-verified Token / SessionStorage)
+    // ─────────────────────────────────────────────────────────────────────────
+    function getAuthToken() {
+      try {
+        return sessionStorage.getItem("admin_token") || "";
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function setAuthToken(token) {
+      try {
+        if (token) {
+          sessionStorage.setItem("admin_token", token);
+        } else {
+          sessionStorage.removeItem("admin_token");
+        }
+      } catch (e) {}
+    }
+
+    function clearAuthToken() {
+      setAuthToken("");
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // TRANSLATION DICTIONARY
@@ -287,7 +309,9 @@
         pin_prompt:             "Ingresa tu PIN para acceder al panel",
         pin_placeholder:        "PIN de acceso",
         pin_unlock:             "Desbloquear",
-        pin_error:              "⚠ PIN incorrecto",
+        pin_verifying:          "Verificando...",
+        pin_error:              "⚠ PIN incorrecto o no autorizado",
+        err_unauthorized:       "Acceso no autorizado o sesión expirada.",
         success_msg:            "✓ Registrado con éxito",
         error_msg:              "✗ Error al enviar. Intenta de nuevo.",
         footer_rights:          "Todos los derechos reservados.",
@@ -347,7 +371,9 @@
         pin_prompt:             "Enter your PIN to access the panel",
         pin_placeholder:        "Access PIN",
         pin_unlock:             "Unlock",
-        pin_error:              "⚠ Incorrect PIN",
+        pin_verifying:          "Verifying...",
+        pin_error:              "⚠ Incorrect PIN or unauthorized",
+        err_unauthorized:       "Unauthorized access or session expired.",
         success_msg:            "✓ Submitted successfully",
         error_msg:              "✗ Submission failed. Please try again.",
         footer_rights:          "All rights reserved.",
@@ -448,6 +474,19 @@
           btn.classList.toggle("text-rose-300", isActive);
         }
       });
+
+      if (name === "panel") {
+        var token = getAuthToken();
+        var pinGate = document.getElementById("pin-gate");
+        var panelContent = document.getElementById("panel-content");
+        if (token && pinGate && panelContent) {
+          pinGate.classList.add("hidden");
+          panelContent.classList.remove("hidden");
+        } else if (pinGate && panelContent) {
+          pinGate.classList.remove("hidden");
+          panelContent.classList.add("hidden");
+        }
+      }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

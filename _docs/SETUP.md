@@ -52,16 +52,19 @@ You will create **two separate** Google Sheets workbooks and deploy **one Apps S
 1. In the Accounting workbook, click **Extensions → Apps Script**.
 2. Delete all existing code in `Code.gs`.
 3. Copy the entire contents of [`_docs/AccountingScript.gs`](./_docs/AccountingScript.gs) and paste it.
-4. Click **💾 Save project** (or `Ctrl+S`).
-5. Click **Deploy → New deployment**.
-6. Click the ⚙️ gear icon next to "Select type" → choose **Web app**.
-7. Fill in the settings:
+4. **Configure your Secret PIN / Auth Token:**
+   - **Option A (in code):** Change `var AUTH_TOKEN = ... || "1234";` to your chosen secret PIN or password.
+   - **Option B (recommended - Script Properties):** In Apps Script, go to **Project Settings** (⚙️ on the left menu) → scroll to **Script Properties** → click **Add script property** → Property: `AUTH_TOKEN`, Value: `TU_PIN_SECRETO` → Save.
+5. Click **💾 Save project** (or `Ctrl+S`).
+6. Click **Deploy → New deployment**.
+7. Click the ⚙️ gear icon next to "Select type" → choose **Web app**.
+8. Fill in the settings:
    - **Description:** `Accounting API v1`
    - **Execute as:** `Me`
    - **Who has access:** `Anyone`
-8. Click **Deploy**.
-9. When prompted, click **Authorize access** and grant the requested permissions.
-10. **Copy the Web App URL** — it looks like:
+9. Click **Deploy**.
+10. When prompted, click **Authorize access** and grant the requested permissions.
+11. **Copy the Web App URL** — it looks like:
     ```
     https://script.google.com/macros/s/AKfycb.../exec
     ```
@@ -72,6 +75,7 @@ You will create **two separate** Google Sheets workbooks and deploy **one Apps S
 Repeat the exact same steps (2.1–2.2) but:
 - Name the workbook **`Contabilidad - Inventario`**
 - Paste [`_docs/InventoryScript.gs`](./_docs/InventoryScript.gs) instead
+- Set the same `AUTH_TOKEN` (in code or in Script Properties)
 
 Keep both Web App URLs handy.
 
@@ -79,9 +83,16 @@ Keep both Web App URLs handy.
 
 Test the GET endpoint in your browser:
 
-```
-https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?limit=5
-```
+1. **Without token (should be rejected):**
+   ```
+   https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?limit=5
+   ```
+   Output should be: `{"status":"unauthorized","message":"Acceso no autorizado"}`
+
+2. **With your secret token (should be authorized):**
+   ```
+   https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?limit=5&auth=TU_PIN_SECRETO
+   ```
 
 For **Accounting**, you will see recent rows and cash balance:
 ```json
@@ -119,11 +130,7 @@ const SCRIPT_URLS = {
 
 Replace both placeholder strings with the Web App URLs from Part 2.
 
-While you're there, optionally change the owner PIN (default is `1234`):
-
-```js
-const ACCESS_PIN = "1234";  // ← change to something memorable
-```
+> **🔒 Security Note:** Notice that the PIN is **no longer in the frontend code**. When you enter your PIN in the panel, the frontend sends it to Apps Script to verify it directly against your private Google Sheets backend.
 
 ---
 

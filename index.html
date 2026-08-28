@@ -150,11 +150,10 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       <!-- PIN input -->
       <input id="pin-input"
         type="password"
-        inputmode="numeric"
-        maxlength="8"
+        maxlength="64"
         autocomplete="current-password"
         class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3.5
-               text-white text-center text-2xl font-mono tracking-[0.35em]
+               text-white text-center text-xl font-mono tracking-[0.25em]
                focus:outline-none focus:border-rose-500 transition-colors mb-2"
         data-i18n-placeholder="pin_placeholder"
         placeholder="PIN de acceso"
@@ -169,8 +168,9 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
       <button id="pin-btn" onclick="unlockPanel()"
         class="w-full bg-rose-500 hover:bg-rose-400 active:scale-[0.98] text-white
                font-semibold py-3.5 rounded-xl shadow-lg shadow-rose-500/25
-               transition-all duration-150">
-        <span data-i18n="pin_unlock">Desbloquear</span>
+               transition-all duration-150 flex items-center justify-center gap-2">
+        <span id="pin-btn-text" data-i18n="pin_unlock">Desbloquear</span>
+        <span id="pin-spinner" class="spinner hidden"></span>
       </button>
     </div>
   </div>
@@ -490,35 +490,74 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
   var cachedStockSummary = {};
 
   // ─────────────────────────────────────────────────────────────────────────
-  // PIN GATE
+  // PIN GATE (Server-validated via Apps Script)
   // ─────────────────────────────────────────────────────────────────────────
-  function unlockPanel() {
-    var input = document.getElementById("pin-input");
-    var errEl = document.getElementById("pin-error");
-    if (input.value === ACCESS_PIN) {
-      document.getElementById("pin-gate").classList.add("hidden");
-      document.getElementById("panel-content").classList.remove("hidden");
-      errEl.style.opacity = "0";
+  async function unlockPanel() {
+    var input   = document.getElementById("pin-input");
+    var errEl   = document.getElementById("pin-error");
+    var btn     = document.getElementById("pin-btn");
+    var btnText = document.getElementById("pin-btn-text");
+    var spinner = document.getElementById("pin-spinner");
+    var pin     = (input.value || "").trim();
 
-      // Load initial history and summaries
-      fetchAccountingHistory();
-      fetchInventoryHistory();
-    } else {
+    if (!pin) {
+      errEl.textContent = t("err_required");
       errEl.style.opacity = "1";
-      input.value = "";
       input.focus();
-      // Brief shake animation
-      input.style.transform = "translateX(-4px)";
-      setTimeout(function() { input.style.transform = "translateX(4px)"; }, 60);
-      setTimeout(function() { input.style.transform = ""; }, 120);
+      return;
+    }
+
+    btn.disabled = true;
+    if (btnText) btnText.textContent = t("pin_verifying");
+    if (spinner) spinner.classList.remove("hidden");
+    errEl.style.opacity = "0";
+
+    try {
+      // Test the PIN against the Accounting endpoint (limit=1)
+      var testUrl = SCRIPT_URLS.accounting + (SCRIPT_URLS.accounting.includes("?") ? "&" : "?") +
+                    "limit=1&auth=" + encodeURIComponent(pin);
+      var res  = await fetch(testUrl, { method: "GET", redirect: "follow" });
+      var data = await res.json();
+
+      if (data.status === "ok") {
+        setAuthToken(pin);
+        document.getElementById("pin-gate").classList.add("hidden");
+        document.getElementById("panel-content").classList.remove("hidden");
+        input.value = "";
+        errEl.style.opacity = "0";
+
+        // Load initial history and summaries
+        fetchAccountingHistory();
+        fetchInventoryHistory();
+      } else {
+        errEl.textContent = t("pin_error");
+        errEl.style.opacity = "1";
+        input.value = "";
+        input.focus();
+        // Brief shake animation
+        input.style.transform = "translateX(-4px)";
+        setTimeout(function() { input.style.transform = "translateX(4px)"; }, 60);
+        setTimeout(function() { input.style.transform = ""; }, 120);
+      }
+    } catch (err) {
+      console.warn("Authentication request failed:", err);
+      errEl.textContent = t("error_msg");
+      errEl.style.opacity = "1";
+    } finally {
+      btn.disabled = false;
+      if (btnText) btnText.textContent = t("pin_unlock");
+      if (spinner) spinner.classList.add("hidden");
     }
   }
 
   function lockPanel() {
+    clearAuthToken();
     document.getElementById("pin-gate").classList.remove("hidden");
     document.getElementById("panel-content").classList.add("hidden");
-    document.getElementById("pin-input").value = "";
-    document.getElementById("pin-error").style.opacity = "0";
+    var input = document.getElementById("pin-input");
+    if (input) input.value = "";
+    var errEl = document.getElementById("pin-error");
+    if (errEl) errEl.style.opacity = "0";
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -659,12 +698,25 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     var container = document.getElementById("acc-history-container");
     if (!container) return;
 
+    var token = getAuthToken();
+    if (!token) {
+      lockPanel();
+      return;
+    }
+
     container.innerHTML = '<div class="text-center py-4 text-zinc-500 text-xs animate-pulse">' + t("lbl_loading_records") + '</div>';
 
     try {
-      var url = SCRIPT_URLS.accounting + (SCRIPT_URLS.accounting.includes("?") ? "&" : "?") + "limit=100";
+      var url = SCRIPT_URLS.accounting + (SCRIPT_URLS.accounting.includes("?") ? "&" : "?") +
+                "limit=100&auth=" + encodeURIComponent(token);
       var res = await fetch(url, { method: "GET", redirect: "follow" });
       var data = await res.json();
+
+      if (data.status === "unauthorized") {
+        showToast(t("err_unauthorized"), true);
+        lockPanel();
+        return;
+      }
 
       if (data.status === "ok") {
         var totalIn = 0;
@@ -748,12 +800,25 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     var container = document.getElementById("inv-history-container");
     if (!container) return;
 
+    var token = getAuthToken();
+    if (!token) {
+      lockPanel();
+      return;
+    }
+
     container.innerHTML = '<div class="text-center py-4 text-zinc-500 text-xs animate-pulse">' + t("lbl_loading_records") + '</div>';
 
     try {
-      var url = SCRIPT_URLS.inventory + (SCRIPT_URLS.inventory.includes("?") ? "&" : "?") + "limit=100";
+      var url = SCRIPT_URLS.inventory + (SCRIPT_URLS.inventory.includes("?") ? "&" : "?") +
+                "limit=100&auth=" + encodeURIComponent(token);
       var res = await fetch(url, { method: "GET", redirect: "follow" });
       var data = await res.json();
+
+      if (data.status === "unauthorized") {
+        showToast(t("err_unauthorized"), true);
+        lockPanel();
+        return;
+      }
 
       if (data.status === "ok") {
         if (data.stockSummary && Object.keys(data.stockSummary).length > 0) {
@@ -883,9 +948,17 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     // Honeypot guard
     if (document.querySelector("#accounting-form input[name='_hp']").value) return;
 
+    var token = getAuthToken();
+    if (!token) {
+      showToast(t("err_unauthorized"), true);
+      lockPanel();
+      return;
+    }
+
     setLoading("acc", true);
 
     var payload = {
+      auth:        token,
       direction:   document.querySelector("input[name='acc-direction']:checked").value,
       amount:      document.getElementById("acc-amount").value,
       description: document.getElementById("acc-desc").value.trim(),
@@ -905,6 +978,9 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         resetDateField("acc-date");
         // Refresh history & summary cards immediately
         fetchAccountingHistory();
+      } else if (data.status === "unauthorized") {
+        showToast(t("err_unauthorized"), true);
+        lockPanel();
       } else {
         showToast(t("error_msg"), true);
         console.error("Accounting script error:", data.message);
@@ -950,12 +1026,20 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
     // Honeypot guard
     if (document.querySelector("#inventory-form input[name='_hp']").value) return;
 
+    var token = getAuthToken();
+    if (!token) {
+      showToast(t("err_unauthorized"), true);
+      lockPanel();
+      return;
+    }
+
     setLoading("inv", true);
 
     var productSelect  = document.getElementById("inv-product");
     var selectedOption = productSelect.options[productSelect.selectedIndex];
 
     var payload = {
+      auth:        token,
       direction:   document.querySelector("input[name='inv-direction']:checked").value,
       ref_code:    productSelect.value,
       description: selectedOption.dataset.desc  || "",
@@ -981,6 +1065,9 @@ description: "Catálogo de aretes, dijes, anillos, collares y bolsas. Gestión i
         if (indicator) indicator.classList.add("hidden");
         // Refresh inventory history & stock summary
         fetchInventoryHistory();
+      } else if (data.status === "unauthorized") {
+        showToast(t("err_unauthorized"), true);
+        lockPanel();
       } else {
         showToast(t("error_msg"), true);
         console.error("Inventory script error:", data.message);

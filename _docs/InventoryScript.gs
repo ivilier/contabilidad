@@ -26,6 +26,22 @@ var HEADERS    = [
   "Price", "Category", "Quantity", "Notes", "Date"
 ];
 
+// ── AUTHENTICATION TOKEN ──────────────────────────────────────────────────────
+// Change this to your private PIN or secure password.
+// Alternatively, set it in Project Settings → Script Properties with key "AUTH_TOKEN".
+var AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
+
+/**
+ * Validates the authentication token sent in GET query params or POST body.
+ * @param  {Object} e
+ * @param  {Object} postData
+ * @return {boolean}
+ */
+function isAuthorized_(e, postData) {
+  var provided = (e && e.parameter && e.parameter.auth) || (postData && postData.auth);
+  return String(provided || "").trim() === String(AUTH_TOKEN).trim();
+}
+
 
 // ══ POST — Append a new inventory movement row ════════════════════════════════
 function doPost(e) {
@@ -35,6 +51,11 @@ function doPost(e) {
     if (!raw) return jsonResponse({ status: "error", message: "Empty request body" });
 
     var data = JSON.parse(raw);
+
+    // ── Authentication guard ────────────────────────────────────────────────
+    if (!isAuthorized_(e, data)) {
+      return jsonResponse({ status: "unauthorized", message: "Acceso no autorizado" });
+    }
 
     // ── Honeypot guard ──────────────────────────────────────────────────────
     if (data._hp && data._hp !== "") {
@@ -81,7 +102,8 @@ function doPost(e) {
 
 // ══ GET — Return the last N rows as JSON + stock summary ══════════════════════
 //
-// Query parameters (all optional):
+// Query parameters:
+//   ?auth=1234            — required authentication token
 //   ?limit=50             — number of rows to return (default 50, max 500)
 //   ?ref_code=E0001       — filter to a specific product
 //   ?direction=OUT        — filter by movement direction: IN or OUT
@@ -89,6 +111,11 @@ function doPost(e) {
 //
 function doGet(e) {
   try {
+    // ── Authentication guard ────────────────────────────────────────────────
+    if (!isAuthorized_(e, null)) {
+      return jsonResponse({ status: "unauthorized", message: "Acceso no autorizado" });
+    }
+
     var params    = (e && e.parameter) || {};
     var limit     = Math.min(parseInt(params.limit || "50", 10), 500);
     var refFilter = params.ref_code   || null;

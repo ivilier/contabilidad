@@ -15,11 +15,11 @@ Diseñada bajo una arquitectura **Jamstack serverless**, combina un sitio estát
   - Datos desacoplados y gestionados desde un archivo YAML (`_data/catalog.yml`).
 
 - **Módulo de Contabilidad (Caja Chica):**
-  - Panel interno protegido mediante código PIN.
+  - Panel interno protegido mediante autenticación de Token/PIN validado directamente en el backend de Google Apps Script.
   - **Métricas financieras en vivo:** Visualización automática de *Total Ingresos*, *Total Egresos* y *Balance Neto en Caja*.
   - **Historial reciente:** Consulta inmediata de los últimos movimientos de caja sin salir de la plataforma.
   - Registro de movimientos de efectivo: **Entradas** (ventas, otros ingresos) y **Salidas** (gastos, proveedores, retiros).
-  - Envío asíncrono y almacenamiento directo en Google Sheets.
+  - Envío asíncrono y almacenamiento directo en Google Sheets con validación criptográfica en servidor.
 
 - **Módulo de Inventario:**
   - **Stock disponible en tiempo real:** Indicador dinámico de existencias al seleccionar cualquier producto del catálogo.
@@ -130,7 +130,7 @@ Para poner en funcionamiento los formularios de Contabilidad e Inventario:
        inventory:  "TU_URL_DE_APPS_SCRIPT_INVENTARIO",
      };
      ```
-   - Si deseas cambiar el PIN de acceso al panel de administración (por defecto `1234`), modifica `ACCESS_PIN` en el mismo archivo.
+   - Configura tu PIN / Token secreto directamente en Google Apps Script (`AUTH_TOKEN` o en *Script Properties*). El PIN **nunca** se almacena en el código público del frontend.
 
 3. **Configurar `_config.yml`:**
    - Ajusta `url` y `baseurl` con los datos de tu repositorio de GitHub Pages.
