@@ -206,22 +206,40 @@ git push -u origin main
 
 ---
 
-## Updating the Catalog
+## Updating the Catalog & Adding New Products
 
-To add, remove, or change products, edit [`_data/catalog.yml`](./_data/catalog.yml).
+There are two ways to manage catalog products:
 
-- **Activate a product:** Uncomment its block (remove `#` prefixes)
-- **Disable a product:** Comment it out with `#`
-- **Add a new product:** Append a new YAML block at the end:
+### Method 1: Directly in Google Sheets (Recommended & Automatic) 🚀
+1. Open your **`Contabilidad - Inventario`** spreadsheet in Google Sheets.
+2. Go to the tab of the corresponding category (e.g. **Aretes**, **Anillos**, **Bolsas**, etc.).
+3. Add a new row with:
+   - `Direction`: `IN`
+   - `Ref Code`: e.g. `E0120`
+   - `Description`: e.g. `Broquel Estrella Circonias`
+   - `Price`: e.g. `$30`
+   - `Category`: e.g. `aretes`
+   - `Quantity`: Initial stock (e.g. `5`)
+   - `Notes`: e.g. `Nuevo ingreso`
+   - `Date`: e.g. `2026-08-28`
+   - `Foto`: `=IMAGE("https://raw.githubusercontent.com/ivilier/contabilidad/main/images/aretes/E0120.jpg")` (or let formula autocomplete)
+4. Save the product's photo into `/images/{category}/{REF_CODE}.jpg` (e.g. `images/aretes/E0120.jpg`).
+5. Run:
+   ```bash
+   git add images/
+   git commit -m "Add photo E0120"
+   git push
+   ```
+6. The product will immediately appear in the store's web catalog and in the management panel!
 
+### Method 2: Static YAML Files (Build Time)
+Edit the category YAML file in `_data/{category}.yml` (e.g. `_data/aretes.yml`).
+Append:
 ```yaml
-- ref_code: "E0099"
-  description: "Nuevo Arete"
-  price: "$15"
-  category: "aretes"
+- ref_code: "E0120"
+  description: "Broquel Estrella Circonias"
+  price: "$30"
 ```
-
-Then commit and push — GitHub Actions rebuilds and redeploys automatically.
 
 ---
 

@@ -240,8 +240,8 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
             <p id="inv-direction-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </fieldset>
 
-          <!-- Product Selector (Populated from all catalog category files) -->
-          <div class="mb-5">
+          <!-- Product Selector -->
+          <div class="mb-4">
             <div class="flex items-center justify-between mb-2">
               <label for="inv-product" class="block text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="inv_product">Producto</label>
               <span id="inv-stock-indicator" class="hidden text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 border border-gray-200">
@@ -258,13 +258,32 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
                   <option value="{{ item.ref_code }}"
                           data-desc="{{ item.description | escape }}"
                           data-price="{{ item.price }}"
-                          data-cat="{{ cat }}">
+                          data-cat="{{ cat }}"
+                          data-img="{{ '/images/' | append: cat | append: '/' | append: item.ref_code | append: '.jpg' | relative_url }}">
                     [{{ item.ref_code }}] {{ item.description }} ({{ item.price }})
                   </option>
                 {% endfor %}
               {% endfor %}
             </select>
             <p id="inv-product-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
+          </div>
+
+          <!-- Live Product Preview Card (Foto + Detalles + Stock) -->
+          <div id="inv-preview-card" class="hidden mb-5 p-4 rounded-xl bg-gray-50 border border-gray-200 flex items-center gap-4 transition-all animate-fade-in">
+            <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-300 shadow-sm flex items-center justify-center">
+              <img id="inv-preview-img" src="" alt="Producto" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'64\' height=\'64\' viewBox=\'0 0 64 64\'><rect width=\'64\' height=\'64\' fill=\'%23f3f4f6\'/><text x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'24\'>💎</text></svg>';" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span id="inv-preview-code" class="font-mono text-xs font-bold text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200"></span>
+                <span id="inv-preview-cat" class="text-[10px] uppercase font-bold text-gray-500 bg-gray-200/80 px-2 py-0.5 rounded"></span>
+              </div>
+              <p id="inv-preview-desc" class="text-sm font-semibold text-gray-800 truncate"></p>
+              <div class="flex items-center gap-3 mt-1 text-xs">
+                <span id="inv-preview-price" class="font-extrabold text-gray-900"></span>
+                <span id="inv-preview-stock-badge" class="font-semibold px-2 py-0.5 rounded-md text-[11px]"></span>
+              </div>
+            </div>
           </div>
 
           <!-- Quantity -->
@@ -607,28 +626,13 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
       }
 
       if (data.status === "ok") {
+        // Sincronizar catálogo dinámico si el backend devolvió productos
+        if (data.products && window.syncDynamicProducts) {
+          window.syncDynamicProducts(data.products);
+        }
+
         if (data.stockSummary && Object.keys(data.stockSummary).length > 0) {
           cachedStockSummary = data.stockSummary;
-        } else if (data.rows && data.rows.length > 0) {
-          var summary = {};
-          data.rows.forEach(function(row) {
-            var code = String(row["Ref Code"] || row.ref_code || "").trim().toUpperCase();
-            var qty = parseInt(row.Quantity || row.quantity, 10) || 0;
-            var dir = String(row.Direction || "").toUpperCase();
-            if (code) {
-              if (!summary[code]) {
-                summary[code] = { currentStock: 0, totalIn: 0, totalOut: 0, ref_code: code };
-              }
-              if (dir === "IN") {
-                summary[code].totalIn += qty;
-                summary[code].currentStock += qty;
-              } else if (dir === "OUT") {
-                summary[code].totalOut += qty;
-                summary[code].currentStock -= qty;
-              }
-            }
-          });
-          cachedStockSummary = summary;
         }
 
         var productSelect = document.getElementById("inv-product");
@@ -652,9 +656,14 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
           var qty = row.Quantity || row.quantity || 1;
           var notes = row.Notes || row.notes || "";
           var dateStr = (row.Date || "").split("T")[0];
+          var catKey = String(row.Category || row.category || "").toLowerCase();
+          var imgUrl = row.ImageUrl || row.Foto || row.Image || ("/images/" + catKey + "/" + code + ".jpg");
 
           html += '<div class="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs sm:text-sm">' +
                     '<div class="flex items-center gap-3 min-w-0">' +
+                      '<div class="w-10 h-10 rounded-lg overflow-hidden bg-white border border-gray-200 flex-shrink-0 flex items-center justify-center">' +
+                        '<img src="' + imgUrl + '" alt="' + desc + '" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=\'data:image/svg+xml,<svg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'40\\\' height=\\\'40\\\' viewBox=\\\'0 0 40 40\\\'><rect width=\\\'40\\\' height=\\\'40\\\' fill=\\\'%23f3f4f6\\\'/><text x=\\\'50%25\\\' y=\\\'50%25\\\' dominant-baseline=\\\'middle\\\' text-anchor=\\\'middle\\\' font-size=\\\'18\\\'>💎</text></svg>\';" />' +
+                      '</div>' +
                       '<span class="px-2 py-1 rounded-md font-mono text-[10px] font-bold border ' + badgeCls + '">' +
                         (isEntry ? "↑ ENTRA" : "↓ SALE") +
                       '</span>' +
@@ -682,10 +691,17 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
   function updateSelectedProductStock(refCode) {
     var indicator = document.getElementById("inv-stock-indicator");
     var valEl = document.getElementById("inv-stock-val");
-    if (!indicator || !valEl) return;
+    var previewCard = document.getElementById("inv-preview-card");
+    var previewImg = document.getElementById("inv-preview-img");
+    var previewCode = document.getElementById("inv-preview-code");
+    var previewCat = document.getElementById("inv-preview-cat");
+    var previewDesc = document.getElementById("inv-preview-desc");
+    var previewPrice = document.getElementById("inv-preview-price");
+    var previewStockBadge = document.getElementById("inv-preview-stock-badge");
 
     if (!refCode) {
-      indicator.classList.add("hidden");
+      if (indicator) indicator.classList.add("hidden");
+      if (previewCard) previewCard.classList.add("hidden");
       return;
     }
 
@@ -693,13 +709,36 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
     var stockObj = cachedStockSummary[code];
     var currentStock = stockObj ? (stockObj.currentStock !== undefined ? stockObj.currentStock : 0) : 0;
 
-    valEl.textContent = currentStock;
-    indicator.classList.remove("hidden");
+    if (valEl) valEl.textContent = currentStock;
+    if (indicator) {
+      indicator.classList.remove("hidden");
+      if (currentStock <= 0) {
+        indicator.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200";
+      } else {
+        indicator.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200";
+      }
+    }
 
-    if (currentStock <= 0) {
-      indicator.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200";
-    } else {
-      indicator.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200";
+    // Actualizar tarjeta de previsualización en el panel
+    var select = document.getElementById("inv-product");
+    var opt = select ? select.options[select.selectedIndex] : null;
+    if (opt && previewCard) {
+      var desc = opt.dataset.desc || (stockObj ? stockObj.description : "") || code;
+      var price = opt.dataset.price || (stockObj ? stockObj.price : "") || "$0";
+      var cat = opt.dataset.cat || (stockObj ? stockObj.category : "") || "";
+      var img = opt.dataset.img || (stockObj ? stockObj.image : "") || ("/images/" + cat + "/" + code + ".jpg");
+
+      if (previewImg) previewImg.src = img;
+      if (previewCode) previewCode.textContent = code;
+      if (previewCat) previewCat.textContent = cat;
+      if (previewDesc) previewDesc.textContent = desc;
+      if (previewPrice) previewPrice.textContent = price.startsWith("$") ? price : "$" + price;
+      if (previewStockBadge) {
+        previewStockBadge.textContent = t("lbl_stock_available") + " " + currentStock + " " + t("lbl_units");
+        previewStockBadge.className = "font-semibold px-2 py-0.5 rounded-md text-[11px] " +
+          (currentStock > 0 ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700");
+      }
+      previewCard.classList.remove("hidden");
     }
   }
 
@@ -834,6 +873,7 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
       description: selectedOption.dataset.desc  || "",
       price:       selectedOption.dataset.price || "",
       category:    selectedOption.dataset.cat   || "",
+      image:       selectedOption.dataset.img   || "",
       quantity:    document.getElementById("inv-qty").value,
       notes:       document.getElementById("inv-notes").value.trim(),
       date:        document.getElementById("inv-date").value,
@@ -856,6 +896,8 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
         resetDateField("inv-date");
         var indicator = document.getElementById("inv-stock-indicator");
         if (indicator) indicator.classList.add("hidden");
+        var previewCard = document.getElementById("inv-preview-card");
+        if (previewCard) previewCard.classList.add("hidden");
         fetchInventoryHistory();
       } else if (data.status === "unauthorized") {
         showToast(t("err_unauthorized"), true);

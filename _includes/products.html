@@ -27,7 +27,7 @@
               data-category="todos"
               aria-pressed="true"
             >
-              <span data-i18n="filter_all">Todos</span> <span class="text-xs opacity-70">({{ total }})</span>
+              <span data-i18n="filter_all">Todos</span> <span id="count-todos" class="text-xs opacity-70">({{ total }})</span>
             </button>
           </li>
           <li>
@@ -36,7 +36,7 @@
               data-category="aretes"
               aria-pressed="false"
             >
-              <span data-i18n="filter_earrings">Aretes</span> <span class="text-xs opacity-70">({{ aretes_count }})</span>
+              <span data-i18n="filter_earrings">Aretes</span> <span id="count-aretes" class="text-xs opacity-70">({{ aretes_count }})</span>
             </button>
           </li>
           <li>
@@ -45,7 +45,7 @@
               data-category="dijes"
               aria-pressed="false"
             >
-              <span data-i18n="filter_pendants">Dijes</span> <span class="text-xs opacity-70">({{ dijes_count }})</span>
+              <span data-i18n="filter_pendants">Dijes</span> <span id="count-dijes" class="text-xs opacity-70">({{ dijes_count }})</span>
             </button>
           </li>
           <li>
@@ -54,7 +54,7 @@
               data-category="anillos"
               aria-pressed="false"
             >
-              <span data-i18n="filter_rings">Anillos</span> <span class="text-xs opacity-70">({{ anillos_count }})</span>
+              <span data-i18n="filter_rings">Anillos</span> <span id="count-anillos" class="text-xs opacity-70">({{ anillos_count }})</span>
             </button>
           </li>
           <li>
@@ -63,7 +63,7 @@
               data-category="cadenas"
               aria-pressed="false"
             >
-              <span data-i18n="filter_chains">Cadenas</span> <span class="text-xs opacity-70">({{ cadenas_count }})</span>
+              <span data-i18n="filter_chains">Cadenas</span> <span id="count-cadenas" class="text-xs opacity-70">({{ cadenas_count }})</span>
             </button>
           </li>
           <li>
@@ -72,7 +72,7 @@
               data-category="bolsas"
               aria-pressed="false"
             >
-              <span data-i18n="filter_bags">Bolsos Wayuu</span> <span class="text-xs opacity-70">({{ bolsas_count }})</span>
+              <span data-i18n="filter_bags">Bolsos Wayuu</span> <span id="count-bolsas" class="text-xs opacity-70">({{ bolsas_count }})</span>
             </button>
           </li>
           <li>
@@ -81,7 +81,7 @@
               data-category="arracadas"
               aria-pressed="false"
             >
-              <span data-i18n="filter_arracadas">Arracadas</span> <span class="text-xs opacity-70">({{ arracadas_count }})</span>
+              <span data-i18n="filter_arracadas">Arracadas</span> <span id="count-arracadas" class="text-xs opacity-70">({{ arracadas_count }})</span>
             </button>
           </li>
           <li>
@@ -90,7 +90,7 @@
               data-category="ear_cuff"
               aria-pressed="false"
             >
-              <span data-i18n="filter_ear_cuff">Brazalete para oreja</span> <span class="text-xs opacity-70">({{ ear_cuff_count }})</span>
+              <span data-i18n="filter_ear_cuff">Brazalete para oreja</span> <span id="count-ear_cuff" class="text-xs opacity-70">({{ ear_cuff_count }})</span>
             </button>
           </li>
           <li>
@@ -99,7 +99,7 @@
               data-category="pulseras"
               aria-pressed="false"
             >
-              <span data-i18n="filter_bracelets">Pulseras</span> <span class="text-xs opacity-70">({{ pulseras_count }})</span>
+              <span data-i18n="filter_bracelets">Pulseras</span> <span id="count-pulseras" class="text-xs opacity-70">({{ pulseras_count }})</span>
             </button>
           </li>
           <li>
@@ -108,7 +108,7 @@
               data-category="tobilleras"
               aria-pressed="false"
             >
-              <span data-i18n="filter_anklets">Tobilleras</span> <span class="text-xs opacity-70">({{ tobilleras_count }})</span>
+              <span data-i18n="filter_anklets">Tobilleras</span> <span id="count-tobilleras" class="text-xs opacity-70">({{ tobilleras_count }})</span>
             </button>
           </li>
           <li>
@@ -117,24 +117,48 @@
               data-category="esmeraldas"
               aria-pressed="false"
             >
-              <span data-i18n="filter_emeralds">Esmeraldas</span> <span class="text-xs opacity-70">({{ esmeraldas_count }})</span>
+              <span data-i18n="filter_emeralds">Esmeraldas</span> <span id="count-esmeraldas" class="text-xs opacity-70">({{ esmeraldas_count }})</span>
             </button>
           </li>
         </ul>
 
         <!-- Price filter -->
-        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mt-6 mb-3" data-i18n="price_title">Precio</h3>
-        <div class="flex items-center gap-2">
-          <input id="price-min" type="number" min="0" placeholder="Min" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400" />
-          <span class="text-gray-400 text-sm">–</span>
-          <input id="price-max" type="number" min="0" placeholder="Max" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400" />
+        <div class="mt-6 pt-6 border-t border-gray-100">
+          <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3" data-i18n="price_title">Precio</h3>
+          <div class="flex items-center gap-2 mb-3">
+            <input
+              id="price-min"
+              type="number"
+              min="0"
+              placeholder="Min"
+              class="w-1/2 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+              aria-label="Precio mínimo"
+            />
+            <span class="text-gray-400 text-xs">-</span>
+            <input
+              id="price-max"
+              type="number"
+              min="0"
+              placeholder="Max"
+              class="w-1/2 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+              aria-label="Precio máximo"
+            />
+          </div>
+          <button
+            id="price-filter-btn"
+            class="w-full bg-gray-800 text-white rounded-lg py-1.5 text-xs font-semibold hover:bg-gray-900 transition-colors mb-1.5"
+            data-i18n="price_filter"
+          >
+            Filtrar
+          </button>
+          <button
+            id="price-clear-btn"
+            class="w-full text-gray-600 rounded-lg py-1 text-xs hover:text-gray-900 transition-colors"
+            data-i18n="price_clear"
+          >
+            Limpiar precio
+          </button>
         </div>
-        <button id="price-filter-btn" class="mt-3 w-full bg-gray-500 text-white text-sm font-medium py-2 rounded-lg hover:bg-gray-600 transition-colors" data-i18n="price_filter">
-          Filtrar
-        </button>
-        <button id="price-clear-btn" class="mt-1 w-full text-xs text-gray-400 hover:text-gray-600 transition-colors" data-i18n="price_clear">
-          Limpiar precio
-        </button>
       </div>
     </aside>
 
@@ -165,14 +189,14 @@
       {% for cat in categories %}
         {% assign items = site.data[cat] %}
         {% for item in items %}
-      <div class="product-card group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300" data-category="{{ cat }}" data-price="{{ item.price | remove: '$' }}" data-name="{{ item.description | downcase }} {{ item.ref_code | downcase }}">
-        <div class="aspect-square overflow-hidden">
+      <div class="product-card group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300" data-ref="{{ item.ref_code | upcase }}" data-category="{{ cat }}" data-price="{{ item.price | remove: '$' }}" data-name="{{ item.description | downcase }} {{ item.ref_code | downcase }}">
+        <div class="aspect-square overflow-hidden bg-gray-100">
           <img
             src="{{ '/images/' | append: cat | append: '/' | append: item.ref_code | append: '.jpg' | relative_url }}"
             alt="{{ item.description }}"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
-          />
+            onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\' viewBox=\'0 0 200 200\'><rect width=\'200\' height=\'200\' fill=\'%23f3f4f6\'/><text x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'40\'>💎</text></svg>\';" />
         </div>
         <div class="p-4 flex flex-col gap-1">
           <span class="text-xs font-mono text-gray-400 uppercase tracking-wide">{{ item.ref_code }}</span>
@@ -206,11 +230,34 @@
     var priceMax = null;
     var searchTerm = '';
 
+    function normalizeCategory(raw) {
+      var k = String(raw || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+      var map = {
+        'arete': 'aretes', 'aretes': 'aretes', 'earring': 'aretes', 'earrings': 'aretes', 'topos': 'aretes', 'broquel': 'aretes',
+        'dije': 'dijes', 'dijes': 'dijes', 'pendant': 'dijes', 'pendants': 'dijes',
+        'anillo': 'anillos', 'anillos': 'anillos', 'ring': 'anillos', 'rings': 'anillos',
+        'cadena': 'cadenas', 'cadenas': 'cadenas', 'collar': 'cadenas', 'collares': 'cadenas',
+        'bolsa': 'bolsas', 'bolsas': 'bolsas', 'bolso': 'bolsas', 'bolsos': 'bolsas', 'carriel': 'bolsas', 'wayuu': 'bolsas',
+        'arracada': 'arracadas', 'arracadas': 'arracadas', 'candonga': 'arracadas',
+        'ear_cuff': 'ear_cuff', 'earcuff': 'ear_cuff', 'ear-cuff': 'ear_cuff', 'ear cuff': 'ear_cuff', 'brazalete para oreja': 'ear_cuff', 'brazalete oreja': 'ear_cuff',
+        'pulsera': 'pulseras', 'pulseras': 'pulseras', 'manilla': 'pulseras',
+        'tobillera': 'tobilleras', 'tobilleras': 'tobilleras',
+        'esmeralda': 'esmeraldas', 'esmeraldas': 'esmeraldas', 'emerald': 'esmeraldas'
+      };
+      return map[k] || k;
+    }
+
+    function refreshCards() {
+      cards = Array.from(document.querySelectorAll('.product-card'));
+    }
+
     function applyFilters() {
+      refreshCards();
       var visibleCount = 0;
       cards.forEach(function (card) {
-        var matchCategory = activeCategory === 'todos' || card.dataset.category === activeCategory;
-        var cardPrice = parseFloat(card.dataset.price);
+        var cardCat = normalizeCategory(card.dataset.category);
+        var matchCategory = activeCategory === 'todos' || cardCat === activeCategory;
+        var cardPrice = parseFloat(card.dataset.price) || 0;
         var matchPrice = true;
         if (priceMin !== null) matchPrice = matchPrice && cardPrice >= priceMin;
         if (priceMax !== null) matchPrice = matchPrice && cardPrice <= priceMax;
@@ -219,16 +266,17 @@
         card.style.display = visible ? '' : 'none';
         if (visible) visibleCount++;
       });
-      noResults.classList.toggle('hidden', visibleCount > 0);
+      if (noResults) noResults.classList.toggle('hidden', visibleCount > 0);
     }
 
     function sortCards() {
+      refreshCards();
       var sort = sortSelect.value;
       var sorted = cards.slice();
       if (sort === 'price-asc') {
-        sorted.sort(function (a, b) { return parseFloat(a.dataset.price) - parseFloat(b.dataset.price); });
+        sorted.sort(function (a, b) { return (parseFloat(a.dataset.price) || 0) - (parseFloat(b.dataset.price) || 0); });
       } else if (sort === 'price-desc') {
-        sorted.sort(function (a, b) { return parseFloat(b.dataset.price) - parseFloat(a.dataset.price); });
+        sorted.sort(function (a, b) { return (parseFloat(b.dataset.price) || 0) - (parseFloat(a.dataset.price) || 0); });
       } else if (sort === 'name-asc') {
         sorted.sort(function (a, b) { return a.dataset.name.localeCompare(b.dataset.name); });
       } else if (sort === 'name-desc') {
@@ -240,7 +288,7 @@
 
     buttons.forEach(function (btn) {
       btn.addEventListener('click', function () {
-        activeCategory = this.dataset.category;
+        activeCategory = normalizeCategory(this.dataset.category);
         buttons.forEach(function (b) {
           b.className = 'filter-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 text-gray-600 hover:bg-gray-100';
           b.setAttribute('aria-pressed', 'false');
@@ -251,25 +299,146 @@
       });
     });
 
-    priceFilterBtn.addEventListener('click', function () {
-      priceMin = priceMinInput.value ? parseFloat(priceMinInput.value) : null;
-      priceMax = priceMaxInput.value ? parseFloat(priceMaxInput.value) : null;
-      applyFilters();
-    });
+    if (priceFilterBtn) {
+      priceFilterBtn.addEventListener('click', function () {
+        priceMin = priceMinInput.value ? parseFloat(priceMinInput.value) : null;
+        priceMax = priceMaxInput.value ? parseFloat(priceMaxInput.value) : null;
+        applyFilters();
+      });
+    }
 
-    priceClearBtn.addEventListener('click', function () {
-      priceMinInput.value = '';
-      priceMaxInput.value = '';
-      priceMin = null;
-      priceMax = null;
-      applyFilters();
-    });
+    if (priceClearBtn) {
+      priceClearBtn.addEventListener('click', function () {
+        priceMinInput.value = '';
+        priceMaxInput.value = '';
+        priceMin = null;
+        priceMax = null;
+        applyFilters();
+      });
+    }
 
-    searchInput.addEventListener('input', function () {
-      searchTerm = this.value.toLowerCase().trim();
-      applyFilters();
-    });
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        searchTerm = this.value.toLowerCase().trim();
+        applyFilters();
+      });
+    }
 
-    sortSelect.addEventListener('change', sortCards);
+    if (sortSelect) sortSelect.addEventListener('change', sortCards);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DYNAMIC PRODUCTS SYNC FROM GOOGLE SHEETS
+    // Sincroniza en tiempo real cualquier producto nuevo creado en Google Sheets
+    // ─────────────────────────────────────────────────────────────────────────
+    window.syncDynamicProducts = function (products) {
+      var list = products;
+      if (!list && typeof products === 'object') list = Object.values(products);
+      if (!list || !Array.isArray(list) || list.length === 0) return;
+
+      var existingMap = {};
+      document.querySelectorAll('.product-card').forEach(function (card) {
+        var ref = (card.dataset.ref || '').toUpperCase();
+        if (ref) existingMap[ref] = card;
+      });
+
+      var addedCount = 0;
+
+      list.forEach(function (p) {
+        var code = String(p.ref_code || p['Ref Code'] || '').trim().toUpperCase();
+        if (!code) return;
+
+        var cat = normalizeCategory(p.category || p.Category || 'aretes');
+        var priceRaw = p.price !== undefined ? p.price : (p.Price !== undefined ? p.Price : '0');
+        var priceStr = String(priceRaw).trim();
+        if (priceStr && !priceStr.startsWith('$')) priceStr = '$' + priceStr;
+        var priceVal = priceStr.replace('$', '').trim();
+        var desc = String(p.description || p.Description || code).trim();
+        var imgSrc = p.image || p.ImageUrl || p.Foto || ('/images/' + cat + '/' + code + '.jpg');
+
+        if (existingMap[code]) {
+          var existingCard = existingMap[code];
+          var imgEl = existingCard.querySelector('img');
+          if (imgEl && imgSrc && imgEl.src !== imgSrc) imgEl.src = imgSrc;
+          var priceEl = existingCard.querySelector('.text-lg');
+          if (priceEl && priceStr) priceEl.textContent = priceStr;
+          var descEl = existingCard.querySelector('h3');
+          if (descEl && desc) descEl.textContent = desc;
+          existingCard.dataset.name = (desc + ' ' + code).toLowerCase();
+          existingCard.dataset.price = priceVal;
+          existingCard.dataset.category = cat;
+          return;
+        }
+
+        // Crear nueva tarjeta de producto en el catálogo
+        var card = document.createElement('div');
+        card.className = 'product-card group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 animate-fade-in';
+        card.dataset.ref = code;
+        card.dataset.category = cat;
+        card.dataset.price = priceVal;
+        card.dataset.name = (desc + ' ' + code).toLowerCase();
+
+        card.innerHTML =
+          '<div class="aspect-square overflow-hidden bg-gray-100">' +
+            '<img src="' + imgSrc + '" alt="' + desc + '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" onerror="this.onerror=null; this.src=\'data:image/svg+xml,<svg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'200\\\' height=\\\'200\\\' viewBox=\\\'0 0 200 200\\\'><rect width=\\\'200\\\' height=\\\'200\\\' fill=\\\'%23f3f4f6\\\'/><text x=\\\'50%25\\\' y=\\\'50%25\\\' dominant-baseline=\\\'middle\\\' text-anchor=\\\'middle\\\' font-size=\\\'40\\\'>💎</text></svg>\';" />' +
+          '</div>' +
+          '<div class="p-4 flex flex-col gap-1">' +
+            '<span class="text-xs font-mono text-gray-400 uppercase tracking-wide">' + code + '</span>' +
+            '<h3 class="text-sm font-semibold text-gray-700 leading-snug">' + desc + '</h3>' +
+            '<span class="text-lg font-bold text-gray-800 mt-1">' + priceStr + '</span>' +
+          '</div>';
+
+        grid.appendChild(card);
+        existingMap[code] = card;
+        addedCount++;
+
+        // Añadir también al selector del panel si existe
+        var productSelect = document.getElementById('inv-product');
+        if (productSelect && !productSelect.querySelector('option[value="' + code + '"]')) {
+          var opt = document.createElement('option');
+          opt.value = code;
+          opt.dataset.desc = desc;
+          opt.dataset.price = priceStr;
+          opt.dataset.cat = cat;
+          opt.dataset.img = imgSrc;
+          opt.textContent = '[' + code + '] ' + desc + ' (' + priceStr + ')';
+          productSelect.appendChild(opt);
+        }
+      });
+
+      // Actualizar contadores de categorías en el sidebar para todas las categorías
+      var totalAll = document.querySelectorAll('.product-card').length;
+      var totalEl = document.getElementById('count-todos');
+      if (totalEl) totalEl.textContent = '(' + totalAll + ')';
+
+      ['aretes', 'dijes', 'anillos', 'cadenas', 'bolsas', 'arracadas', 'ear_cuff', 'pulseras', 'tobilleras', 'esmeraldas'].forEach(function(c) {
+        var countEl = document.getElementById('count-' + c);
+        if (countEl) {
+          var cCount = document.querySelectorAll('.product-card[data-category="' + c + '"]').length;
+          countEl.textContent = '(' + cCount + ')';
+        }
+      });
+
+      refreshCards();
+      applyFilters();
+    };
+
+    // Consulta inicial del catálogo desde Google Sheets
+    if (typeof SCRIPT_URLS !== 'undefined' && SCRIPT_URLS.inventory) {
+      var token = (typeof getAuthToken === 'function' ? getAuthToken() : '') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('admin_token') : '') || '';
+      var catalogFetchUrl = SCRIPT_URLS.inventory + (SCRIPT_URLS.inventory.includes('?') ? '&' : '?') + 'action=catalog' + (token ? '&auth=' + encodeURIComponent(token) : '');
+      fetch(catalogFetchUrl, { method: 'GET', redirect: 'follow' })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data) {
+            var prods = data.products || (data.stockSummary ? Object.values(data.stockSummary) : []);
+            if (prods && prods.length > 0) {
+              window.syncDynamicProducts(prods);
+            }
+          }
+        })
+        .catch(function (err) {
+          console.log('Static catalog active.');
+        });
+    }
   });
 </script>

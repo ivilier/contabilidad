@@ -1,28 +1,21 @@
 /**
- * InventoryScript.gs — Opción 1 (Pestañas separadas por Categoría - Batch Optimizado)
+ * InventoryScript.gs — Sistema de Inventario Multicategoría y Catálogo Dinámico
  * ─────────────────────────────────────────────────────────────────────────────
- * Google Apps Script Web App — Libro de Inventario de ivilier Joyería
+ * Google Apps Script Web App — ivilier Joyería
  *
- * ESTRUCTURA DEL LIBRO DE GOOGLE SHEETS
- *   Crea y gestiona automáticamente 10 pestañas dedicadas por categoría:
- *     1.  Aretes
- *     2.  Anillos
- *     3.  Bolsas
- *     4.  Dijes
- *     5.  Cadenas
- *     6.  Arracadas
- *     7.  Ear Cuff
- *     8.  Pulseras
- *     9.  Tobilleras
- *     10. Esmeraldas
+ * ESTRUCTURA DEL LIBRO DE GOOGLE SHEETS:
+ *   10 pestañas dedicadas por categoría con colores:
+ *     1. Aretes     2. Anillos     3. Bolsas     4. Dijes       5. Cadenas
+ *     6. Arracadas  7. Ear Cuff    8. Pulseras   9. Tobilleras  10. Esmeraldas
  *
  * ENCABEZADOS POR PESTAÑA:
- *   Timestamp | Direction | Ref Code | Description | Price | Category | Quantity | Notes | Date
+ *   Timestamp | Direction | Ref Code | Description | Price | Category | Quantity | Notes | Date | Foto
  *
- * CONFIGURACIÓN DE DESPLIEGUE EN APPS SCRIPT:
- *   Implementar → Nueva implementación → Tipo: Aplicación web
- *   Ejecutar como : Yo (tu cuenta de Google)
- *   Quién tiene acceso: Cualquier usuario (Anyone)
+ * SINCRONIZACIÓN AUTOMÁTICA CON LA WEB:
+ *   - Cualquier producto nuevo agregado en Google Sheets con su código de referencia
+ *     se sincroniza automáticamente con el catálogo de la tienda web.
+ *   - La imagen se vincula automáticamente a:
+ *     /images/{categoria}/{REF_CODE}.jpg
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -40,9 +33,22 @@ var CATEGORY_TABS = {
   "esmeraldas": { name: "Esmeraldas", color: "#22c55e" }, // Green
 };
 
+var CATEGORY_ALIASES = {
+  "arete": "aretes", "aretes": "aretes", "earring": "aretes", "earrings": "aretes", "topos": "aretes", "broquel": "aretes",
+  "dije": "dijes", "dijes": "dijes", "pendant": "dijes", "pendants": "dijes",
+  "anillo": "anillos", "anillos": "anillos", "ring": "anillos", "rings": "anillos",
+  "cadena": "cadenas", "cadenas": "cadenas", "collar": "cadenas", "collares": "cadenas",
+  "bolsa": "bolsas", "bolsas": "bolsas", "bolso": "bolsas", "bolsos": "bolsas", "carriel": "bolsas", "wayuu": "bolsas",
+  "arracada": "arracadas", "arracadas": "arracadas", "candonga": "arracadas",
+  "ear_cuff": "ear_cuff", "earcuff": "ear_cuff", "ear-cuff": "ear_cuff", "ear cuff": "ear_cuff", "brazalete para oreja": "ear_cuff", "brazalete oreja": "ear_cuff",
+  "pulsera": "pulseras", "pulseras": "pulseras", "manilla": "pulseras",
+  "tobillera": "tobilleras", "tobilleras": "tobilleras",
+  "esmeralda": "esmeraldas", "esmeraldas": "esmeraldas", "emerald": "esmeraldas"
+};
+
 var HEADERS = [
   "Timestamp", "Direction", "Ref Code", "Description",
-  "Price", "Category", "Quantity", "Notes", "Date"
+  "Price", "Category", "Quantity", "Notes", "Date", "Foto"
 ];
 
 // ── TOKEN / PIN DE AUTENTICACIÓN ──────────────────────────────────────────────
@@ -61,11 +67,43 @@ function isAuthorized_(e, postData) {
  */
 function getTabInfoForCategory_(rawCategory) {
   var key = String(rawCategory || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
-  return CATEGORY_TABS[key] || { name: rawCategory || "General", color: "#475569" };
+  var canonicalKey = CATEGORY_ALIASES[key] || key;
+  return CATEGORY_TABS[canonicalKey] || { name: rawCategory || "General", color: "#475569" };
+}
+
+/**
+ * Extrae o genera la URL de la imagen.
+ */
+function normalizeImageUrl_(val, formula, category, refCode) {
+  var str = String(val || "").trim();
+  var form = String(formula || "").trim();
+
+  // Si hay una fórmula =IMAGE("URL")
+  if (form && form.toUpperCase().indexOf("IMAGE(") !== -1) {
+    var match = form.match(/IMAGE\(\s*["']([^"']+)["']/i);
+    if (match && match[1]) return match[1];
+  }
+
+  // Si es un enlace de Google Drive
+  if (str.indexOf("drive.google.com") !== -1) {
+    var idMatch = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/id=([a-zA-Z0-9_-]+)/);
+    if (idMatch && idMatch[1]) {
+      return "https://lh3.googleusercontent.com/d/" + idMatch[1];
+    }
+  }
+
+  if (str && (str.startsWith("http://") || str.startsWith("https://") || str.startsWith("/"))) {
+    return str;
+  }
+
+  // Ruta por defecto en el repositorio
+  var catKey = String(category || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  var code = String(refCode || "").trim().toUpperCase();
+  return "/images/" + catKey + "/" + code + ".jpg";
 }
 
 
-// ══ POST — Registrar movimiento en la pestaña de su categoría ═════════════════
+// ══ POST — Registrar movimiento de inventario en la pestaña de su categoría ═══
 function doPost(e) {
   try {
     var raw = e.postData && e.postData.contents;
@@ -107,16 +145,26 @@ function doPost(e) {
       var tabName = tabInfo.name;
       if (!grouped[tabName]) grouped[tabName] = { info: tabInfo, rows: [] };
 
+      var catKey = String(item.category || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+      var code = item.ref_code.trim().toUpperCase();
+
+      // Fórmula de imagen para la celda de Google Sheets
+      var imageField = item.image || item.image_url || "";
+      if (!imageField) {
+        imageField = '=IMAGE("https://raw.githubusercontent.com/ivilier/contabilidad/main/images/' + catKey + '/' + code + '.jpg")';
+      }
+
       grouped[tabName].rows.push([
         new Date().toISOString(),
         item.direction,
-        item.ref_code.trim().toUpperCase(),
+        code,
         (item.description || "").trim(),
         (item.price       || "").trim(),
         (item.category    || "").trim(),
         qty,
         (item.notes || "").trim(),
         item.date,
+        imageField
       ]);
     }
 
@@ -140,15 +188,17 @@ function doPost(e) {
 }
 
 
-// ══ GET — Leer movimientos y calcular stock consolidado por pestañas ══════════
+// ══ GET — Leer movimientos, stock y catálogo dinámico ═════════════════════════
 function doGet(e) {
   try {
-    // ── Guard de autenticación ──────────────────────────────────────────────
-    if (!isAuthorized_(e, null)) {
+    var params = (e && e.parameter) || {};
+    var isCatalogRequest = params.action === "catalog" || params.action === "public";
+
+    // Si no es consulta pública de catálogo, validar PIN
+    if (!isCatalogRequest && !isAuthorized_(e, null)) {
       return jsonResponse({ status: "unauthorized", message: "Acceso no autorizado" });
     }
 
-    var params    = (e && e.parameter) || {};
     var limit     = Math.min(parseInt(params.limit || "50", 10), 500);
     var refFilter = params.ref_code   || null;
     var dirFilter = params.direction  || null;
@@ -168,7 +218,6 @@ function doGet(e) {
         if (s) sheetsToRead.push(s);
       });
 
-      // Incluir también la hoja InventoryLog si aún tiene registros pendientes
       var legacySheet = ss.getSheetByName("InventoryLog");
       if (legacySheet && sheetsToRead.indexOf(legacySheet) === -1) {
         sheetsToRead.push(legacySheet);
@@ -177,31 +226,53 @@ function doGet(e) {
 
     var allRows = [];
     var stockSummary = {};
+    var dynamicCatalog = {};
 
     sheetsToRead.forEach(function(sheet) {
       var lastRow = sheet.getLastRow();
       var lastCol = sheet.getLastColumn();
       if (lastRow <= 1 || lastCol < 1) return;
 
-      var all = sheet.getRange(1, 1, lastRow, Math.max(lastCol, HEADERS.length)).getValues();
-      var headers = all[0];
+      var numCols = Math.max(lastCol, HEADERS.length);
+      var allValues = sheet.getRange(1, 1, lastRow, numCols).getValues();
+      var allFormulas = sheet.getRange(1, 1, lastRow, numCols).getFormulas();
+      var headers = allValues[0];
 
-      for (var r = 1; r < all.length; r++) {
-        var row = all[r];
+      var codeIdx = headers.indexOf("Ref Code");
+      var descIdx = headers.indexOf("Description");
+      var priceIdx = headers.indexOf("Price");
+      var catIdx = headers.indexOf("Category");
+      var qtyIdx = headers.indexOf("Quantity");
+      var dirIdx = headers.indexOf("Direction");
+      var imgIdx = headers.indexOf("Foto");
+      if (imgIdx === -1) imgIdx = headers.indexOf("Image");
+
+      for (var r = 1; r < allValues.length; r++) {
+        var row = allValues[r];
+        var formulas = allFormulas[r];
         var obj = {};
         headers.forEach(function(h, i) { obj[h] = row[i]; });
 
-        var code = String(obj["Ref Code"] || "").trim().toUpperCase();
-        var qty  = parseInt(obj["Quantity"], 10) || 0;
-        var dir  = String(obj["Direction"] || "").toUpperCase();
+        var code = String(codeIdx !== -1 ? row[codeIdx] : obj["Ref Code"] || "").trim().toUpperCase();
+        var desc = String(descIdx !== -1 ? row[descIdx] : obj["Description"] || "").trim();
+        var price = String(priceIdx !== -1 ? row[priceIdx] : obj["Price"] || "").trim();
+        var cat = String(catIdx !== -1 ? row[catIdx] : obj["Category"] || "").trim().toLowerCase();
+        var qty = parseInt(qtyIdx !== -1 ? row[qtyIdx] : obj["Quantity"], 10) || 0;
+        var dir = String(dirIdx !== -1 ? row[dirIdx] : obj["Direction"] || "").toUpperCase();
+
+        var rawImgVal = imgIdx !== -1 ? row[imgIdx] : (obj["Foto"] || obj["Image"] || "");
+        var rawImgForm = imgIdx !== -1 ? formulas[imgIdx] : "";
+        var imgUrl = normalizeImageUrl_(rawImgVal, rawImgForm, cat, code);
+        obj["ImageUrl"] = imgUrl;
 
         if (code) {
           if (!stockSummary[code]) {
             stockSummary[code] = {
               ref_code:     code,
-              description:  obj["Description"] || "",
-              price:        obj["Price"] || "",
-              category:     obj["Category"] || "",
+              description:  desc,
+              price:        price,
+              category:     cat,
+              image:        imgUrl,
               totalIn:      0,
               totalOut:     0,
               currentStock: 0
@@ -214,10 +285,31 @@ function doGet(e) {
             stockSummary[code].totalOut += qty;
             stockSummary[code].currentStock -= qty;
           }
+
+          // Construcción del catálogo dinámico
+          if (!dynamicCatalog[code]) {
+            dynamicCatalog[code] = {
+              ref_code:     code,
+              description:  desc,
+              price:        price ? (price.startsWith("$") ? price : "$" + price) : "$0",
+              category:     cat,
+              image:        imgUrl,
+              currentStock: stockSummary[code].currentStock
+            };
+          } else {
+            dynamicCatalog[code].currentStock = stockSummary[code].currentStock;
+            if (desc && !dynamicCatalog[code].description) dynamicCatalog[code].description = desc;
+            if (price && (!dynamicCatalog[code].price || dynamicCatalog[code].price === "$0")) dynamicCatalog[code].price = price.startsWith("$") ? price : "$" + price;
+            if (imgUrl && !dynamicCatalog[code].image) dynamicCatalog[code].image = imgUrl;
+          }
         }
 
         allRows.push(obj);
       }
+    });
+
+    var productsArray = Object.keys(dynamicCatalog).map(function(k) {
+      return dynamicCatalog[k];
     });
 
     var filteredRows = allRows;
@@ -242,6 +334,7 @@ function doGet(e) {
     return jsonResponse({
       status: "ok",
       rows: recentRows,
+      products: productsArray,
       total: recentRows.length,
       stockSummary: stockSummary,
       totalMovements: allRows.length
@@ -254,10 +347,10 @@ function doGet(e) {
 }
 
 
-// ══ UTILIDADES Y MIGRACIÓN OPTIMIZADA POR LOTES ═══════════════════════════════
+// ══ UTILIDADES Y MIGRACIÓN EN LOTE (BATCH) ════════════════════════════════════
 
 /**
- * Obtiene o crea la pestaña de la categoría indicada y le aplica diseño.
+ * Obtiene o crea la pestaña de la categoría indicada con diseño y ancho de columnas.
  */
 function getOrCreateCategorySheet_(ss, tabName, colorHex) {
   var sheet = ss.getSheetByName(tabName);
@@ -287,14 +380,21 @@ function getOrCreateCategorySheet_(ss, tabName, colorHex) {
       sheet.setColumnWidth(7, 75);  // Quantity
       sheet.setColumnWidth(8, 200); // Notes
       sheet.setColumnWidth(9, 105); // Date
+      sheet.setColumnWidth(10, 180);// Foto
     } catch (e) {}
+  } else {
+    var lastCol = sheet.getLastColumn();
+    if (lastCol < HEADERS.length) {
+      sheet.getRange(1, HEADERS.length).setValue("Foto");
+      try { sheet.setColumnWidth(HEADERS.length, 180); } catch (e) {}
+    }
   }
 
   return sheet;
 }
 
 /**
- * Inicializa las 10 pestañas de categorías con diseño en un solo paso.
+ * Inicializa las 10 pestañas de categorías en el libro de cálculo.
  */
 function initializeAllCategoryTabs() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -307,7 +407,7 @@ function initializeAllCategoryTabs() {
 
 /**
  * Migra los registros existentes en 'InventoryLog' agrupándolos en memoria
- * e insertándolos por lotes (Batch) en menos de 1 segundo sin errores.
+ * e insertándolos por lotes (Batch) con su fórmula de imagen.
  */
 function migrateExistingRowsToCategoryTabs() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -325,26 +425,36 @@ function migrateExistingRowsToCategoryTabs() {
     return;
   }
 
-  var all = legacy.getRange(1, 1, lastRow, Math.max(lastCol, HEADERS.length)).getValues();
-  var headers = all[0];
+  var allValues = legacy.getRange(1, 1, lastRow, lastCol).getValues();
+  var headers = allValues[0];
   var catColIdx = headers.indexOf("Category");
   if (catColIdx === -1) catColIdx = 5;
 
-  // Agrupar filas por pestaña de categoría
   var grouped = {};
-  for (var i = 1; i < all.length; i++) {
-    var row = all[i];
+  for (var i = 1; i < allValues.length; i++) {
+    var row = allValues[i];
     var rawCat = String(row[catColIdx] || "").trim();
     var tabInfo = getTabInfoForCategory_(rawCat);
     var tabName = tabInfo.name;
 
+    var paddedRow = [];
+    for (var c = 0; c < HEADERS.length; c++) {
+      paddedRow.push(c < row.length ? row[c] : "");
+    }
+
+    // Si falta la fórmula de foto, generarla
+    if (!paddedRow[9]) {
+      var catKey = String(rawCat || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+      var refCode = String(paddedRow[2] || "").trim().toUpperCase();
+      paddedRow[9] = '=IMAGE("https://raw.githubusercontent.com/ivilier/contabilidad/main/images/' + catKey + '/' + refCode + '.jpg")';
+    }
+
     if (!grouped[tabName]) {
       grouped[tabName] = { info: tabInfo, rows: [] };
     }
-    grouped[tabName].rows.push(row);
+    grouped[tabName].rows.push(paddedRow);
   }
 
-  // Escribir en lote en cada pestaña
   var totalMigrated = 0;
   Object.keys(grouped).forEach(function(tabName) {
     var g = grouped[tabName];
@@ -354,10 +464,10 @@ function migrateExistingRowsToCategoryTabs() {
     var startRow = sheet.getLastRow() + 1;
     sheet.getRange(startRow, 1, g.rows.length, HEADERS.length).setValues(g.rows);
     totalMigrated += g.rows.length;
-    Logger.log("✓ " + tabName + ": " + g.rows.length + " filas migradas.");
+    Logger.log("✓ " + tabName + ": " + g.rows.length + " filas migradas con foto.");
   });
 
-  Logger.log("✓ Migración completada con éxito. Total: " + totalMigrated + " registros distribuidos en sus pestañas.");
+  Logger.log("✓ Migración completada con éxito. Total: " + totalMigrated + " registros distribuidos.");
 }
 
 function jsonResponse(obj) {
