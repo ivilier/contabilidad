@@ -153,9 +153,9 @@
   <header class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
 
-      <!-- Brand Logo -->
-      <a href="{{ '/' | relative_url }}" onclick="showSection('catalog'); return true;"
-        class="flex items-center gap-2 text-xl font-bold tracking-tight text-gray-800 hover:text-gray-900 transition-colors">
+      <!-- Brand Logo (Triple-click opens admin panel) -->
+      <a id="brand-logo" href="javascript:void(0)" onclick="handleLogoClick(event)"
+        class="flex items-center gap-2 text-xl font-bold tracking-tight text-gray-800 hover:text-gray-900 transition-colors select-none cursor-pointer">
         <span>💎</span>
         <span data-i18n="site_title">{{ site.title }}</span>
       </a>
@@ -168,8 +168,9 @@
           <span data-i18n="nav_catalog">Catálogo</span>
         </button>
 
+        <!-- Panel button (discreet, hidden for public visitors until authenticated or summoned) -->
         <button id="nav-panel-btn" onclick="showSection('panel')"
-          class="nav-btn px-3 py-2 rounded-lg transition-colors hover:text-gray-900 hover:bg-gray-100"
+          class="nav-btn hidden px-3 py-2 rounded-lg transition-colors hover:text-gray-900 hover:bg-gray-100"
           aria-label="Panel">
           <span data-i18n="nav_panel">Panel</span>
         </button>
@@ -225,8 +226,8 @@
         Catálogo
       </button>
 
-      <button onclick="showSection('panel'); document.getElementById('mobile-menu').classList.add('hidden');"
-        class="block w-full text-left py-2 text-sm text-gray-700 font-medium hover:text-gray-900" data-i18n="nav_panel">
+      <button id="mobile-nav-panel-btn" onclick="showSection('panel'); document.getElementById('mobile-menu').classList.add('hidden');"
+        class="hidden block w-full text-left py-2 text-sm text-gray-700 font-medium hover:text-gray-900" data-i18n="nav_panel">
         Panel
       </button>
 
@@ -333,8 +334,11 @@
 
       </div>
 
-      <div class="border-t border-gray-700 mt-8 pt-6 text-center text-xs text-gray-500" data-i18n="footer_rights">
-        © {{ 'now' | date: '%Y' }} {{ site.title }}. Todos los derechos reservados.
+      <div class="border-t border-gray-700 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2">
+        <p data-i18n="footer_rights">© {{ 'now' | date: '%Y' }} {{ site.title }}. Todos los derechos reservados.</p>
+        <button onclick="showSection('panel')" class="text-gray-600 hover:text-gray-400 transition-colors p-1 text-[11px] select-none" title="Acceso al panel" aria-label="Acceso al panel">
+          🔒
+        </button>
       </div>
     </div>
   </footer>
@@ -483,6 +487,8 @@
         err_amount: "El monto debe ser mayor a 0.",
         err_quantity: "La cantidad debe ser mayor a 0.",
         err_unauthorized: "Acceso no autorizado o sesión expirada.",
+        err_locked: "Demasiados intentos fallidos. Acceso temporalmente bloqueado por 15 minutos.",
+        err_session_timeout: "Sesión bloqueada automáticamente por inactividad (30 min).",
         success_msg: "✓ Registrado con éxito",
         error_msg: "✗ Error al enviar. Intenta de nuevo.",
       },
@@ -569,6 +575,8 @@
         err_amount: "Amount must be greater than 0.",
         err_quantity: "Quantity must be greater than 0.",
         err_unauthorized: "Unauthorized access or session expired.",
+        err_locked: "Too many failed attempts. Access temporarily locked for 15 minutes.",
+        err_session_timeout: "Session automatically locked due to inactivity (30 min).",
         success_msg: "✓ Submitted successfully",
         error_msg: "✗ Submission failed. Please try again.",
       },
@@ -631,6 +639,87 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // INACTIVITY AUTO-LOCK (30 Minutes)
+    // ─────────────────────────────────────────────────────────────────────────
+    var INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos
+    var _inactivityTimer = null;
+
+    function resetInactivityTimer() {
+      clearTimeout(_inactivityTimer);
+      var token = getAuthToken();
+      if (token) {
+        _inactivityTimer = setTimeout(function () {
+          var activeToken = getAuthToken();
+          if (activeToken) {
+            if (typeof lockPanel === "function") {
+              lockPanel();
+              showToast(t("err_session_timeout"), true);
+            }
+          }
+        }, INACTIVITY_TIMEOUT_MS);
+      }
+    }
+
+    ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"].forEach(function (evt) {
+      window.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DISCREET ACCESS HELPERS (Logo Triple-Click, Shortcuts & Footer Lock)
+    // ─────────────────────────────────────────────────────────────────────────
+    var _logoClicks = 0;
+    var _logoTimer = null;
+    function handleLogoClick(e) {
+      if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+      _logoClicks++;
+      clearTimeout(_logoTimer);
+
+      if (_logoClicks >= 3) {
+        _logoClicks = 0;
+        showSection('panel');
+      } else {
+        _logoTimer = setTimeout(function () {
+          if (_logoClicks === 1) {
+            showSection('catalog');
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+          _logoClicks = 0;
+        }, 350);
+      }
+      return false;
+    }
+
+    document.addEventListener("keydown", function (e) {
+      // Shortcuts: Ctrl+Shift+A, Cmd+Shift+A, Ctrl+Shift+P, Cmd+Shift+P, Alt+P
+      var isPanelShortcut = ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "A" || e.key === "a" || e.key === "P" || e.key === "p")) ||
+                            (e.altKey && (e.key === "p" || e.key === "P" || e.key === "a" || e.key === "A"));
+      if (isPanelShortcut) {
+        e.preventDefault();
+        showSection('panel');
+      }
+      if (e.key === "Escape") {
+        var pinGate = document.getElementById("pin-gate");
+        var secPanel = document.getElementById("section-panel");
+        if (secPanel && !secPanel.classList.contains("hidden") && pinGate && !pinGate.classList.contains("hidden")) {
+          showSection('catalog');
+        }
+      }
+    });
+
+    function updateNavPanelVisibility() {
+      var token = getAuthToken();
+      var btnDesktop = document.getElementById("nav-panel-btn");
+      var btnMobile = document.getElementById("mobile-nav-panel-btn");
+      var isVisible = !!token;
+
+      if (btnDesktop) btnDesktop.classList.toggle("hidden", !isVisible);
+      if (btnMobile) btnMobile.classList.toggle("hidden", !isVisible);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // SECTION SWITCHER (Catálogo ↔ Panel)
     // ─────────────────────────────────────────────────────────────────────────
     function showSection(name) {
@@ -653,6 +742,8 @@
         if (token && pinGate && panelContent) {
           pinGate.classList.add("hidden");
           panelContent.classList.remove("hidden");
+          updateNavPanelVisibility();
+          resetInactivityTimer();
           if (typeof fetchAccountingHistory === "function") fetchAccountingHistory();
           if (typeof fetchInventoryHistory === "function") fetchInventoryHistory();
         } else {
@@ -700,6 +791,7 @@
     // ─────────────────────────────────────────────────────────────────────────
     document.addEventListener("DOMContentLoaded", function () {
       applyTranslations();
+      updateNavPanelVisibility();
 
       // Mobile Menu
       var mobileBtn = document.getElementById("mobile-menu-btn");
@@ -733,8 +825,20 @@
         if (!el.value) el.value = today;
       });
 
-      // Default to public catalog view
-      showSection("catalog");
+      // Handle direct URL hash navigation (#panel / #admin)
+      if (window.location.hash === "#panel" || window.location.hash === "#admin") {
+        showSection("panel");
+      } else {
+        showSection("catalog");
+      }
+
+      window.addEventListener("hashchange", function () {
+        if (window.location.hash === "#panel" || window.location.hash === "#admin") {
+          showSection("panel");
+        } else if (window.location.hash === "#catalog" || window.location.hash === "") {
+          showSection("catalog");
+        }
+      });
     });
   </script>
 

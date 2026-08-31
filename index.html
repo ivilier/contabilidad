@@ -391,12 +391,21 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
         input.value = "";
         errEl.style.opacity = "0";
 
+        if (typeof updateNavPanelVisibility === "function") updateNavPanelVisibility();
+        if (typeof resetInactivityTimer === "function") resetInactivityTimer();
+
         // Load initial history and summaries
         fetchAccountingHistory();
         fetchInventoryHistory();
       } else {
         clearAuthToken();
-        errEl.textContent = t("pin_error");
+        if (typeof updateNavPanelVisibility === "function") updateNavPanelVisibility();
+
+        if (data.status === "locked") {
+          errEl.textContent = data.message || t("err_locked");
+        } else {
+          errEl.textContent = data.message || t("pin_error");
+        }
         errEl.style.opacity = "1";
         input.value = "";
         input.focus();
@@ -417,6 +426,7 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
 
   function lockPanel() {
     clearAuthToken();
+    if (typeof updateNavPanelVisibility === "function") updateNavPanelVisibility();
     var pinGate = document.getElementById("pin-gate");
     var panelContent = document.getElementById("panel-content");
     if (pinGate) pinGate.classList.remove("hidden");

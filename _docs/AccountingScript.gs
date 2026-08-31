@@ -22,20 +22,71 @@
 var SHEET_NAME = "CashFlow";
 var HEADERS    = ["Timestamp", "Direction", "Amount", "Description", "Date"];
 
-// ── AUTHENTICATION TOKEN ──────────────────────────────────────────────────────
+// ── TOKEN / PIN DE AUTENTICACIÓN ──────────────────────────────────────────────
 // Se lee de forma segura desde las "Propiedades del Script" en Google Apps Script
 // para que la clave real NUNCA quede expuesta en el repositorio público de GitHub.
 var AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
 
+// ── SANITIZACIÓN CONTRA INYECCIÓN DE FÓRMULAS ─────────────────────────────────
 /**
- * Validates the authentication token sent in GET query params or POST body.
+ * Escapa cadenas de texto que puedan ser interpretadas como fórmulas maliciosas en Google Sheets.
+ */
+function sanitizeText_(str) {
+  var text = String(str || "").trim();
+  if (!text) return "";
+  var first = text.charAt(0);
+  if (first === "=" || first === "+" || first === "-" || first === "@" || first === "\t" || first === "\r") {
+    return "'" + text;
+  }
+  return text;
+}
+
+// ── CONTROL DE INTENTOS FALLIDOS (RATE LIMITING / BRUTE-FORCE PROTECTION) ─────
+var MAX_FAILED_ATTEMPTS = 5;
+var LOCKOUT_SECONDS     = 900; // 15 minutos de bloqueo
+
+/**
+ * Valida el token o PIN enviado y gestiona el bloqueo por intentos fallidos.
  * @param  {Object} e
  * @param  {Object} postData
- * @return {boolean}
+ * @return {Object} { authorized: boolean, locked: boolean, message?: string }
  */
-function isAuthorized_(e, postData) {
+function checkAuthSecurity_(e, postData) {
+  var cache = CacheService.getScriptCache();
+  var lockStatus = cache.get("auth_locked");
+  if (lockStatus) {
+    return {
+      authorized: false,
+      locked: true,
+      message: "Demasiados intentos fallidos. Acceso temporalmente bloqueado por 15 minutos."
+    };
+  }
+
   var provided = (e && e.parameter && e.parameter.auth) || (postData && postData.auth);
-  return String(provided || "").trim() === String(AUTH_TOKEN).trim();
+  var isValid = AUTH_TOKEN && String(provided || "").trim() === String(AUTH_TOKEN).trim();
+
+  if (isValid) {
+    cache.remove("failed_auth_attempts");
+    return { authorized: true, locked: false };
+  } else {
+    var failedCount = parseInt(cache.get("failed_auth_attempts") || "0", 10) + 1;
+    if (failedCount >= MAX_FAILED_ATTEMPTS) {
+      cache.put("auth_locked", "1", LOCKOUT_SECONDS);
+      cache.remove("failed_auth_attempts");
+      return {
+        authorized: false,
+        locked: true,
+        message: "Demasiados intentos fallidos. Acceso temporalmente bloqueado por 15 minutos."
+      };
+    } else {
+      cache.put("failed_auth_attempts", String(failedCount), LOCKOUT_SECONDS);
+      return {
+        authorized: false,
+        locked: false,
+        message: "Acceso no autorizado (Intento " + failedCount + " de " + MAX_FAILED_ATTEMPTS + ")"
+      };
+    }
+  }
 }
 
 
@@ -48,9 +99,13 @@ function doPost(e) {
 
     var data = JSON.parse(raw);
 
-    // ── Authentication guard ────────────────────────────────────────────────
-    if (!isAuthorized_(e, data)) {
-      return jsonResponse({ status: "unauthorized", message: "Acceso no autorizado" });
+    // ── Authentication & Rate Limiting guard ────────────────────────────────
+    var authCheck = checkAuthSecurity_(e, data);
+    if (!authCheck.authorized) {
+      return jsonResponse({
+        status: authCheck.locked ? "locked" : "unauthorized",
+        message: authCheck.message || "Acceso no autorizado"
+      });
     }
 
     // ── Honeypot guard ──────────────────────────────────────────────────────
@@ -71,13 +126,13 @@ function doPost(e) {
       return jsonResponse({ status: "error", message: "Missing date" });
     }
 
-    // ── Append row ──────────────────────────────────────────────────────────
+    // ── Append row (sanitized against formula injection) ────────────────────
     var sheet = getOrCreateSheet_();
     sheet.appendRow([
       new Date().toISOString(),       // Timestamp — server-side UTC
       data.direction,                  // "IN" or "OUT"
       amount,                          // Numeric for spreadsheet calculations
-      (data.description || "").trim(), // Optional free-text description
+      sanitizeText_(data.description), // Sanitized free-text description
       data.date,                       // Client date string (YYYY-MM-DD)
     ]);
 
@@ -99,9 +154,13 @@ function doPost(e) {
 //
 function doGet(e) {
   try {
-    // ── Authentication guard ────────────────────────────────────────────────
-    if (!isAuthorized_(e, null)) {
-      return jsonResponse({ status: "unauthorized", message: "Acceso no autorizado" });
+    // ── Authentication & Rate Limiting guard ────────────────────────────────
+    var authCheck = checkAuthSecurity_(e, null);
+    if (!authCheck.authorized) {
+      return jsonResponse({
+        status: authCheck.locked ? "locked" : "unauthorized",
+        message: authCheck.message || "Acceso no autorizado"
+      });
     }
 
     var params    = (e && e.parameter) || {};
