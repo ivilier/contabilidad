@@ -1,3 +1,12 @@
+# Ear_cuff — Catálogo oficial sincronizado con Google Sheets
+# Total items: 3
+
 - ref_code: "C0001"
   description: "Brazalete Oreja Estrellas"
+  price: "$20"
+- ref_code: "C0002"
+  description: "Brazalete Oreja Estrellas test"
+  price: "$20"
+- ref_code: "C0003"
+  description: "Brazalete Oreja Estrellas test 2"
   price: "$20"

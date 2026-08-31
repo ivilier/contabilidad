@@ -147,9 +147,19 @@ contabilidad/
      };
      ```
 
-3. **Desplegar en GitHub Pages:**
-   - Haz push a la rama `main`.
-   - En tu repositorio de GitHub, ve a **Settings → Pages** y selecciona **GitHub Actions** como fuente de compilación.
+## 🔄 Sincronización Automática con Archivos YAML (`_data/*.yml`)
+
+Cuando agregues o elimines productos en Google Sheets, los archivos `_data/*.yml` se mantienen sincronizados automáticamente:
+
+1. **Sincronización manual en tu computadora:**
+   ```bash
+   ruby scripts/sync_inventory_to_yaml.rb
+   ```
+   *(Consulta Google Sheets, crea los productos nuevos, borra los eliminados y actualiza precios/nombres en todos los archivos `.yml` de `_data/`)*.
+
+2. **Sincronización automática en GitHub Actions:**
+   - **En cada despliegue:** Antes de compilar el sitio en GitHub Pages, el flujo `.github/workflows/deploy.yml` ejecuta la sincronización para construir el sitio con los datos más recientes.
+   - **Flujo programado:** El flujo `.github/workflows/sync-inventory.yml` se ejecuta periódicamente y actualiza los archivos `.yml` en el repositorio automáticamente.
 
 ---
 

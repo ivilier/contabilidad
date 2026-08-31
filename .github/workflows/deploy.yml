@@ -36,6 +36,9 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
+      - name: Sync inventory from Google Sheets to _data/*.yml
+        run: ruby scripts/sync_inventory_to_yaml.rb
+
       - name: Build with Jekyll 4.3+
         # The base path is injected by configure-pages so relative links work
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"

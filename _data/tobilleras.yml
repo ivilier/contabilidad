@@ -1,4 +1,6 @@
-# Tobilleras (Anklets)
+# Tobilleras — Catálogo oficial sincronizado con Google Sheets
+# Total items: 5
+
 - ref_code: "T0001"
   description: "tobillera_T0001"
   price: "$0"
