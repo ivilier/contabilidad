@@ -54,7 +54,9 @@ var HEADERS = [
 // ── TOKEN / PIN DE AUTENTICACIÓN ──────────────────────────────────────────────
 // Se lee de forma segura desde las "Propiedades del Script" en Google Apps Script
 // para que la clave real NUNCA quede expuesta en el repositorio público de GitHub.
-var AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
+function getAuthToken_() {
+  return PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN") || "";
+}
 
 // ── SANITIZACIÓN CONTRA INYECCIÓN DE FÓRMULAS ─────────────────────────────────
 /**
@@ -91,8 +93,9 @@ function checkAuthSecurity_(e, postData) {
     };
   }
 
+  var token = getAuthToken_();
   var provided = (e && e.parameter && e.parameter.auth) || (postData && postData.auth);
-  var isValid = AUTH_TOKEN && String(provided || "").trim() === String(AUTH_TOKEN).trim();
+  var isValid = token && String(provided || "").trim() === String(token).trim();
 
   if (isValid) {
     cache.remove("failed_auth_attempts");
@@ -116,6 +119,17 @@ function checkAuthSecurity_(e, postData) {
       };
     }
   }
+}
+
+/**
+ * Utilidad manual: Ejecuta esta función en el editor de Apps Script si deseas reiniciar
+ * el contador de intentos fallidos o quitar el bloqueo de 15 minutos de inmediato.
+ */
+function resetSecurityLock() {
+  var cache = CacheService.getScriptCache();
+  cache.remove("auth_locked");
+  cache.remove("failed_auth_attempts");
+  Logger.log("✓ Bloqueos e intentos fallidos reiniciados con éxito.");
 }
 
 /**
