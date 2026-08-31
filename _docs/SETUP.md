@@ -85,7 +85,10 @@ Keep both Web App URLs handy.
 
 ### 2.4 Security & Rate Limiting Features
 
-- **Rate Limiting & Countdown:** Apps Script permits up to **3 consecutive failed authorization attempts**. If exceeded, access is temporarily locked for 15 minutes and the frontend automatically displays a live countdown timer (`MM:SS`), re-enabling access once expired.
+- **Rate Limiting & Progressive Feedback:** Apps Script permits up to **3 consecutive failed authorization attempts**.
+  - **Attempt 1:** Displays a warning indicating that 2 attempts remain.
+  - **Attempt 2:** Displays an urgent warning indicating the last remaining attempt before lockout.
+  - **Attempt 3:** Access is temporarily locked for 15 minutes and the frontend displays a **live digital countdown clock (`MM:SS`)**, automatically re-enabling access once the timer reaches `00:00`.
 - **Manual Lock Reset (`resetSecurityLock`):** If you ever need to manually clear the lockout or reset the failure counter, select the `resetSecurityLock` function in Apps Script's top toolbar and click **Run**.
 - **Formula Injection Protection:** Text inputs are automatically sanitized to prevent malicious spreadsheet formula execution.
 
@@ -110,6 +113,10 @@ To access the management panel as the store owner:
 1. **Triple-click the logo 💎:** Click 3 times rapidly on the brand logo at the top left.
 2. **Keyboard Shortcut:** Press `Ctrl + Shift + A` (Windows/Linux), `Cmd + Shift + A` (Mac), or `Alt + P`.
 3. **Session Auto-Lock:** The panel automatically locks and clears credentials after **30 minutes of inactivity**.
+
+---
+
+## Part 4 — GitHub Pages Deployment
 
 ### 4.1 Create the GitHub repository
 
@@ -153,8 +160,8 @@ git push -u origin main
 ## Part 5 — Post-Deployment Testing
 
 ### Catalog
-- [ ] All products from `_data/catalog.yml` appear in the grid
-- [ ] Category filter tabs correctly filter by `aretes`, `dijes`, `anillos`, `collares`, `bolsas`
+- [ ] All products from `_data/*.yml` appear in the grid
+- [ ] Category filter tabs correctly filter by category
 - [ ] "No hay productos" message appears when a category is empty
 
 ### Language Toggle
@@ -162,21 +169,50 @@ git push -u origin main
 - [ ] Refreshing the page preserves the last selected language
 
 ### Owner Panel
-- [ ] Wrong PIN shows error, does not unlock
-- [ ] Correct PIN (default `1234`) unlocks the panel
+- [ ] Wrong PIN shows attempt counter (1 of 3, last attempt)
+- [ ] 3rd failed attempt shows live 15-minute countdown clock
+- [ ] Correct PIN unlocks the panel
 - [ ] "Bloquear" button re-locks the panel
+- [ ] Inactivity for 30 minutes automatically locks the panel
 
-### Accounting Form
-- [ ] Submitting empty form shows inline validation errors
-- [ ] Selecting Money In / Money Out highlights the correct direction card
-- [ ] Successful submit shows ✓ green toast and resets the form
-- [ ] New row appears in the **CashFlow** sheet in the Accounting workbook
+---
 
-### Inventory Form
-- [ ] Product dropdown lists all catalog items with ref codes and prices
-- [ ] Submitting empty form shows inline validation errors
-- [ ] Successful submit shows ✓ green toast and resets the form
-- [ ] New row appears in the **InventoryLog** sheet in the Inventory workbook
+## Part 6 — Cloudflare & Custom Domain Setup (Production Shield)
+
+Cloudflare acts as a free security shield and global CDN for your custom domain (`catalogo.ivilier.com` or `ivilier.com`).
+
+### 6.1 Add Domain to Cloudflare
+1. Create a free account at [cloudflare.com](https://www.cloudflare.com/).
+2. Click **Add a Site** → enter your domain (e.g. `ivilier.com`) → choose the **Free** plan.
+
+### 6.2 Point Nameservers
+1. In your domain registrar (GoDaddy, Namecheap, Google Domains, etc.), replace the current DNS servers with the two assigned by Cloudflare (e.g. `aria.ns.cloudflare.com` and `dane.ns.cloudflare.com`).
+
+### 6.3 Configure DNS Records in Cloudflare
+Under **DNS → Records**:
+* **For subdomain `catalogo.ivilier.com` (Recommended):**
+  - **Type:** `CNAME`
+  - **Name:** `catalogo`
+  - **Target:** `YOUR-USERNAME.github.io`
+  - **Proxy status:** 🟠 **Proxied**
+
+* **For root domain `ivilier.com`:**
+  - Create 4 `A` records for `@` pointing to GitHub Pages IPs:
+    - `185.199.108.153` (Proxied 🟠)
+    - `185.199.109.153` (Proxied 🟠)
+    - `185.199.110.153` (Proxied 🟠)
+    - `185.199.111.153` (Proxied 🟠)
+  - Create a `CNAME` for `www` pointing to `YOUR-USERNAME.github.io` (Proxied 🟠).
+
+### 6.4 Link Custom Domain in GitHub Pages
+1. In GitHub repo → **Settings → Pages → Custom domain**, enter `catalogo.ivilier.com`.
+2. Check **Enforce HTTPS**.
+
+### 6.5 Recommended Cloudflare Security Settings
+1. **SSL/TLS → Overview:** Set encryption to **Full** (or *Full Strict*).
+2. **SSL/TLS → Edge Certificates:** Enable **Always Use HTTPS** and **Automatic HTTPS Rewrites**.
+3. **Security → Bots:** Enable **Bot Fight Mode** to block scrapers and malicious crawlers.
+4. **Speed → Optimization:** Enable **Brotli** and check **Auto Minify** (HTML, CSS, JS).
 
 ---
 

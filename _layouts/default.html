@@ -486,8 +486,11 @@
         err_unauthorized: "Acceso no autorizado o sesión expirada.",
         err_locked: "Demasiados intentos fallidos. Acceso temporalmente bloqueado por 15 minutos.",
         err_session_timeout: "Sesión bloqueada automáticamente por inactividad (30 min).",
-        lbl_locked_countdown: "Demasiados intentos fallidos. Reintenta en {time}",
-        lbl_unlock_ready: "✓ Ya puedes intentar ingresar tu PIN nuevamente.",
+        err_attempts_remaining: "⚠ Contraseña incorrecta. Te quedan {count} intentos antes del bloqueo.",
+        err_last_attempt: "⚠ Contraseña incorrecta. ¡Último intento restante antes del bloqueo!",
+        lbl_lockout_title: "Acceso Bloqueado",
+        lbl_lockout_desc: "Demasiados intentos fallidos. Podrás intentar de nuevo en:",
+        lbl_unlock_ready: "✓ El bloqueo ha finalizado. Ya puedes ingresar tu PIN.",
         success_msg: "✓ Registrado con éxito",
         error_msg: "✗ Error al enviar. Intenta de nuevo.",
       },
@@ -576,8 +579,11 @@
         err_unauthorized: "Unauthorized access or session expired.",
         err_locked: "Too many failed attempts. Access temporarily locked for 15 minutes.",
         err_session_timeout: "Session automatically locked due to inactivity (30 min).",
-        lbl_locked_countdown: "Too many failed attempts. Try again in {time}",
-        lbl_unlock_ready: "✓ You can now try entering your PIN again.",
+        err_attempts_remaining: "⚠ Incorrect PIN. You have {count} attempts left before lockout.",
+        err_last_attempt: "⚠ Incorrect PIN. Last attempt before lockout!",
+        lbl_lockout_title: "Access Locked",
+        lbl_lockout_desc: "Too many failed attempts. You can try again in:",
+        lbl_unlock_ready: "✓ Security lock expired. You can now enter your PIN.",
         success_msg: "✓ Submitted successfully",
         error_msg: "✗ Submission failed. Please try again.",
       },
@@ -750,10 +756,11 @@
         } else {
           if (pinGate) pinGate.classList.remove("hidden");
           if (panelContent) panelContent.classList.add("hidden");
+          if (typeof checkExistingLockout === "function") checkExistingLockout();
           var pinInp = document.getElementById("pin-input");
           if (pinInp) {
             pinInp.value = "";
-            setTimeout(function () { pinInp.focus(); }, 60);
+            setTimeout(function () { if (!pinInp.disabled) pinInp.focus(); }, 60);
           }
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
