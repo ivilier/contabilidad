@@ -44,24 +44,31 @@ function sanitizeText_(str) {
 }
 
 // ── CONTROL DE INTENTOS FALLIDOS (RATE LIMITING / BRUTE-FORCE PROTECTION) ─────
-var MAX_FAILED_ATTEMPTS = 5;
-var LOCKOUT_SECONDS     = 900; // 15 minutos de bloqueo
+var MAX_FAILED_ATTEMPTS = 3;   // Máximo 3 intentos
+var LOCKOUT_SECONDS     = 900; // 15 minutos de bloqueo (900 segundos)
 
 /**
  * Valida el token o PIN enviado y gestiona el bloqueo por intentos fallidos.
  * @param  {Object} e
  * @param  {Object} postData
- * @return {Object} { authorized: boolean, locked: boolean, message?: string }
+ * @return {Object} { authorized: boolean, locked: boolean, remainingSecs?: number, attemptsLeft?: number, message?: string }
  */
 function checkAuthSecurity_(e, postData) {
   var cache = CacheService.getScriptCache();
-  var lockStatus = cache.get("auth_locked");
-  if (lockStatus) {
-    return {
-      authorized: false,
-      locked: true,
-      message: "Demasiados intentos fallidos. Acceso temporalmente bloqueado por 15 minutos."
-    };
+  var lockUntilStr = cache.get("auth_lock_until");
+  var now = new Date().getTime();
+
+  if (lockUntilStr) {
+    var lockUntil = parseInt(lockUntilStr, 10);
+    if (lockUntil > now) {
+      var remaining = Math.max(1, Math.ceil((lockUntil - now) / 1000));
+      return {
+        authorized: false,
+        locked: true,
+        remainingSecs: remaining,
+        message: "Demasiados intentos fallidos. Acceso temporalmente bloqueado por 15 minutos."
+      };
+    }
   }
 
   var token = getAuthToken_();
@@ -70,15 +77,18 @@ function checkAuthSecurity_(e, postData) {
 
   if (isValid) {
     cache.remove("failed_auth_attempts");
+    cache.remove("auth_lock_until");
     return { authorized: true, locked: false };
   } else {
     var failedCount = parseInt(cache.get("failed_auth_attempts") || "0", 10) + 1;
     if (failedCount >= MAX_FAILED_ATTEMPTS) {
-      cache.put("auth_locked", "1", LOCKOUT_SECONDS);
+      var lockExpiresAt = now + (LOCKOUT_SECONDS * 1000);
+      cache.put("auth_lock_until", String(lockExpiresAt), LOCKOUT_SECONDS);
       cache.remove("failed_auth_attempts");
       return {
         authorized: false,
         locked: true,
+        remainingSecs: LOCKOUT_SECONDS,
         message: "Demasiados intentos fallidos. Acceso temporalmente bloqueado por 15 minutos."
       };
     } else {
@@ -86,6 +96,7 @@ function checkAuthSecurity_(e, postData) {
       return {
         authorized: false,
         locked: false,
+        attemptsLeft: MAX_FAILED_ATTEMPTS - failedCount,
         message: "Acceso no autorizado (Intento " + failedCount + " de " + MAX_FAILED_ATTEMPTS + ")"
       };
     }
@@ -98,7 +109,7 @@ function checkAuthSecurity_(e, postData) {
  */
 function resetSecurityLock() {
   var cache = CacheService.getScriptCache();
-  cache.remove("auth_locked");
+  cache.remove("auth_lock_until");
   cache.remove("failed_auth_attempts");
   Logger.log("✓ Bloqueos e intentos fallidos reiniciados con éxito.");
 }
@@ -118,6 +129,8 @@ function doPost(e) {
     if (!authCheck.authorized) {
       return jsonResponse({
         status: authCheck.locked ? "locked" : "unauthorized",
+        remainingSecs: authCheck.remainingSecs || 0,
+        attemptsLeft: authCheck.attemptsLeft !== undefined ? authCheck.attemptsLeft : 0,
         message: authCheck.message || "Acceso no autorizado"
       });
     }
@@ -173,6 +186,8 @@ function doGet(e) {
     if (!authCheck.authorized) {
       return jsonResponse({
         status: authCheck.locked ? "locked" : "unauthorized",
+        remainingSecs: authCheck.remainingSecs || 0,
+        attemptsLeft: authCheck.attemptsLeft !== undefined ? authCheck.attemptsLeft : 0,
         message: authCheck.message || "Acceso no autorizado"
       });
     }

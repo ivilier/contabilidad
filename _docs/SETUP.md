@@ -53,11 +53,14 @@ You will create **two separate** Google Sheets workbooks and deploy **one Apps S
 2. Delete all existing code in `Code.gs`.
 3. Copy the entire contents of [`_docs/AccountingScript.gs`](./_docs/AccountingScript.gs) and paste it.
 4. **Configure your Secret PIN / Auth Token:**
-   - **Option A (in code):** Change `var AUTH_TOKEN = ... || "1234";` to your chosen secret PIN or password.
-   - **Option B (recommended - Script Properties):** In Apps Script, go to **Project Settings** (⚙️ on the left menu) → scroll to **Script Properties** → click **Add script property** → Property: `AUTH_TOKEN`, Value: `TU_PIN_SECRETO` → Save.
+   - In Apps Script, go to **Project Settings** (⚙️ on the left menu) → scroll down to **Script Properties** (*Propiedades de la secuencia de comandos*).
+   - Click **Add script property** (*Agregar propiedad de secuencia de comandos*).
+   - **Property:** `AUTH_TOKEN`
+   - **Value:** Your private PIN or password (e.g. `%Foxman01` or your private key).
+   - Click **Save script properties**.
 5. Click **💾 Save project** (or `Ctrl+S`).
-6. Click **Deploy → New deployment**.
-7. Click the ⚙️ gear icon next to "Select type" → choose **Web app**.
+6. Click **Deploy → New deployment** (or *Manage deployments → Edit → New version*).
+7. Select type **Web app**.
 8. Fill in the settings:
    - **Description:** `Accounting API v1`
    - **Execute as:** `Me`
@@ -72,55 +75,25 @@ You will create **two separate** Google Sheets workbooks and deploy **one Apps S
 
 ### 2.3 Create the Inventory Workbook
 
-Repeat the exact same steps (2.1–2.2) but:
-- Name the workbook **`Contabilidad - Inventario`**
-- Paste [`_docs/InventoryScript.gs`](./_docs/InventoryScript.gs) instead
-- Set the same `AUTH_TOKEN` (in code or in Script Properties)
-- *(Opcional / Recomendado)* Para crear de inmediato las 10 pestañas por categoría con sus colores y estilos, selecciona la función `initializeAllCategoryTabs` en la barra superior de Apps Script y haz clic en **Ejecutar**. Si ya tienes registros en `InventoryLog`, selecciona `migrateExistingRowsToCategoryTabs` y haz clic en **Ejecutar** para distribuirlos en sus pestañas.
+Repeat the exact same steps (2.1–2.2) in your **`Contabilidad - Inventario`** spreadsheet:
+- Paste [`_docs/InventoryScript.gs`](./_docs/InventoryScript.gs) into `Code.gs`.
+- In **Project Settings (⚙️) → Script Properties**, set the **exact same** `AUTH_TOKEN`.
+- Deploy as **Web app** with `Execute as: Me` and `Who has access: Anyone`.
+- *(Optional / Recommended)* To immediately initialize the 10 category tabs with colors and headers, select `initializeAllCategoryTabs` in the top bar of Apps Script and click **Run**. If you have existing data in `InventoryLog`, run `migrateExistingRowsToCategoryTabs` to distribute records.
 
 Keep both Web App URLs handy.
 
-### 2.4 Verify the scripts work (optional but recommended)
+### 2.4 Security & Rate Limiting Features
 
-Test the GET endpoint in your browser:
-
-1. **Without token (should be rejected):**
-   ```
-   https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?limit=5
-   ```
-   Output should be: `{"status":"unauthorized","message":"Acceso no autorizado"}`
-
-2. **With your secret token (should be authorized):**
-   ```
-   https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?limit=5&auth=TU_PIN_SECRETO
-   ```
-
-For **Accounting**, you will see recent rows and cash balance:
-```json
-{
-  "status": "ok",
-  "rows": [],
-  "total": 0,
-  "summary": { "totalIn": 0, "totalOut": 0, "balance": 0, "totalCount": 0 }
-}
-```
-
-For **Inventory**, you will see recent rows and consolidated stock by product:
-```json
-{
-  "status": "ok",
-  "rows": [],
-  "total": 0,
-  "stockSummary": {},
-  "totalMovements": 0
-}
-```
+- **Rate Limiting & Countdown:** Apps Script permits up to **3 consecutive failed authorization attempts**. If exceeded, access is temporarily locked for 15 minutes and the frontend automatically displays a live countdown timer (`MM:SS`), re-enabling access once expired.
+- **Manual Lock Reset (`resetSecurityLock`):** If you ever need to manually clear the lockout or reset the failure counter, select the `resetSecurityLock` function in Apps Script's top toolbar and click **Run**.
+- **Formula Injection Protection:** Text inputs are automatically sanitized to prevent malicious spreadsheet formula execution.
 
 ---
 
-## Part 3 — Wire Scripts into the Site
+## Part 3 — Wire Scripts into the Site & Accessing the Panel
 
-Open [`_layouts/default.html`](./_layouts/default.html) and find the `SCRIPT_URLS` constant near the top of the `<script>` block:
+Open [`_layouts/default.html`](./_layouts/default.html) and check the `SCRIPT_URLS` constant near the top of the `<script>` block:
 
 ```js
 const SCRIPT_URLS = {
@@ -129,13 +102,14 @@ const SCRIPT_URLS = {
 };
 ```
 
-Replace both placeholder strings with the Web App URLs from Part 2.
+### 🔒 Discreet Panel Access
 
-> **🔒 Security Note:** Notice that the PIN is **no longer in the frontend code**. When you enter your PIN in the panel, the frontend sends it to Apps Script to verify it directly against your private Google Sheets backend.
+The "Panel" navigation button is **hidden from public store visitors by default**.
 
----
-
-## Part 4 — GitHub Pages Deployment
+To access the management panel as the store owner:
+1. **Triple-click the logo 💎:** Click 3 times rapidly on the brand logo at the top left.
+2. **Keyboard Shortcut:** Press `Ctrl + Shift + A` (Windows/Linux), `Cmd + Shift + A` (Mac), or `Alt + P`.
+3. **Session Auto-Lock:** The panel automatically locks and clears credentials after **30 minutes of inactivity**.
 
 ### 4.1 Create the GitHub repository
 

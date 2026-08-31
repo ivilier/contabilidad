@@ -33,11 +33,19 @@ Construido bajo una arquitectura **Jamstack serverless**, combina un sitio está
 - Conmutador de idioma **Español (predeterminado) / Inglés** sin recargar la página.
 - Persistencia de preferencia en `localStorage` con script en `<head>` para prevenir parpadeos (FOUT).
 
-### 🛡️ 5. Seguridad y Rendimiento
-- Validación de PIN en servidor (no se expone la clave maestra en el código estático).
-- Campos honeypot contra bots y spam.
-- Hojas de cálculo 100% privadas.
-- Costo cero de infraestructura y alta velocidad de carga.
+### 🛡️ 5. Seguridad, Privacidad y Rendimiento
+- **Cero Secretos en Git:** La clave maestra (`AUTH_TOKEN`) nunca se almacena en el frontend ni en GitHub; se guarda exclusivamente en las *Propiedades del Script* (*Script Properties*) de tu cuenta privada de Google.
+- **Protección contra Fuerza Bruta (3 Intentos & Cuenta Regresiva de 15 Minutos):** Si se registran **3 intentos fallidos**, el sistema bloquea el acceso temporalmente por 15 minutos. El panel muestra un **temporizador de cuenta regresiva en vivo (`MM:SS`)** y se rehabilita automáticamente al llegar a cero.
+- **Sanitización contra Inyección de Fórmulas:** Neutralización automática de caracteres de escape y fórmulas (`=`, `+`, `-`, `@`) en descripciones y notas antes de guardarse en Google Sheets.
+- **Acceso Discreto al Panel (Oculto al Público):** El botón de acceso al panel permanece invisible para clientes y visitantes. Solo tú puedes invocarlo mediante:
+  - **Triple clic rápido en el logo 💎** de la tienda.
+  - **Atajo de teclado:** `Ctrl + Shift + A` / `Cmd + Shift + A` o `Alt + P`.
+- **Navegación Dinámica:** Una vez desbloqueado con el PIN, el botón "Panel" aparece en el menú para alternar fácilmente entre la tienda y la administración.
+- **Cierre Automático por Inactividad:** Cierre de sesión y bloqueo automático tras **30 minutos sin actividad** en la pestaña.
+- **Almacenamiento Efímero (`sessionStorage`):** La sesión solo vive en la memoria de la pestaña activa y se destruye al cerrar el navegador o pulsar "Bloquear".
+- **Honeypots anti-spam:** Campos trampa ocultos para neutralizar bots automatizados.
+- **Hojas 100% Privadas:** Google Sheets permanece completamente cerrado al público.
+- **Costo Cero & Ultra Rápido:** Arquitectura Jamstack serverless de alto rendimiento.
 
 ---
 

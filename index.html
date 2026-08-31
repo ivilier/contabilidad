@@ -354,6 +354,85 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
 
 <script>
   var cachedStockSummary = {};
+  var _lockCountdownInterval = null;
+
+  function startLockCountdown(seconds) {
+    var errEl   = document.getElementById("pin-error");
+    var input   = document.getElementById("pin-input");
+    var btn     = document.getElementById("pin-btn");
+    var btnText = document.getElementById("pin-btn-text");
+    var spinner = document.getElementById("pin-spinner");
+    if (!errEl) return;
+
+    var durationSecs = typeof seconds === "number" && seconds > 0 ? seconds : 900;
+    var lockUntil = Date.now() + (durationSecs * 1000);
+    try { sessionStorage.setItem("auth_lock_until", String(lockUntil)); } catch(e) {}
+
+    if (input) {
+      input.disabled = true;
+      input.value = "";
+      input.classList.add("bg-gray-100", "cursor-not-allowed", "opacity-75");
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add("opacity-50", "cursor-not-allowed");
+      if (btnText) btnText.textContent = t("pin_unlock");
+      if (spinner) spinner.classList.add("hidden");
+    }
+
+    clearInterval(_lockCountdownInterval);
+
+    function updateCountdown() {
+      var remaining = Math.max(0, Math.ceil((lockUntil - Date.now()) / 1000));
+      if (remaining <= 0) {
+        clearInterval(_lockCountdownInterval);
+        try { sessionStorage.removeItem("auth_lock_until"); } catch(e) {}
+        if (input) {
+          input.disabled = false;
+          input.classList.remove("bg-gray-100", "cursor-not-allowed", "opacity-75");
+          input.value = "";
+          setTimeout(function() { input.focus(); }, 100);
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove("opacity-50", "cursor-not-allowed");
+        }
+        errEl.className = "text-emerald-600 text-xs font-semibold mb-4 min-h-[1rem] transition-opacity opacity-100";
+        errEl.textContent = t("lbl_unlock_ready");
+        return;
+      }
+
+      var mins = Math.floor(remaining / 60);
+      var secs = remaining % 60;
+      var timeStr = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+
+      errEl.className = "text-red-600 text-xs font-semibold mb-4 min-h-[1rem] transition-opacity opacity-100";
+      var tpl = t("lbl_locked_countdown") || "Demasiados intentos fallidos. Reintenta en {time}";
+      errEl.textContent = tpl.replace("{time}", timeStr);
+    }
+
+    updateCountdown();
+    _lockCountdownInterval = setInterval(updateCountdown, 1000);
+  }
+
+  function checkExistingLockout() {
+    try {
+      var lockUntilStr = sessionStorage.getItem("auth_lock_until");
+      if (lockUntilStr) {
+        var lockUntil = parseInt(lockUntilStr, 10);
+        var remaining = Math.ceil((lockUntil - Date.now()) / 1000);
+        if (remaining > 0) {
+          startLockCountdown(remaining);
+        } else {
+          sessionStorage.removeItem("auth_lock_until");
+        }
+      }
+    } catch(e) {}
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    checkExistingLockout();
+  });
 
   // ─────────────────────────────────────────────────────────────────────────
   // PIN AUTHENTICATION GATE (Server-validated)
@@ -367,8 +446,8 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
     var pin     = (input.value || "").trim();
 
     if (!pin) {
+      errEl.className = "text-red-500 text-xs mb-4 min-h-[1rem] transition-opacity opacity-100";
       errEl.textContent = t("err_required");
-      errEl.style.opacity = "1";
       input.focus();
       return;
     }
@@ -385,6 +464,8 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
       var data = await res.json();
 
       if (data.status === "ok") {
+        clearInterval(_lockCountdownInterval);
+        try { sessionStorage.removeItem("auth_lock_until"); } catch(e) {}
         setAuthToken(pin);
         document.getElementById("pin-gate").classList.add("hidden");
         document.getElementById("panel-content").classList.remove("hidden");
@@ -402,25 +483,34 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
         if (typeof updateNavPanelVisibility === "function") updateNavPanelVisibility();
 
         if (data.status === "locked") {
-          errEl.textContent = data.message || t("err_locked");
+          var remaining = data.remainingSecs || 900;
+          startLockCountdown(remaining);
         } else {
+          errEl.className = "text-red-500 text-xs mb-4 min-h-[1rem] transition-opacity opacity-100";
           errEl.textContent = data.message || t("pin_error");
+          input.value = "";
+          input.focus();
+          input.style.transform = "translateX(-4px)";
+          setTimeout(function() { input.style.transform = "translateX(4px)"; }, 60);
+          setTimeout(function() { input.style.transform = ""; }, 120);
         }
-        errEl.style.opacity = "1";
-        input.value = "";
-        input.focus();
-        input.style.transform = "translateX(-4px)";
-        setTimeout(function() { input.style.transform = "translateX(4px)"; }, 60);
-        setTimeout(function() { input.style.transform = ""; }, 120);
       }
     } catch (err) {
       console.warn("Authentication request failed:", err);
+      errEl.className = "text-red-500 text-xs mb-4 min-h-[1rem] transition-opacity opacity-100";
       errEl.textContent = t("error_msg");
-      errEl.style.opacity = "1";
     } finally {
-      btn.disabled = false;
-      if (btnText) btnText.textContent = t("pin_unlock");
-      if (spinner) spinner.classList.add("hidden");
+      var isStillLocked = false;
+      try {
+        var lockUntilStr = sessionStorage.getItem("auth_lock_until");
+        if (lockUntilStr && parseInt(lockUntilStr, 10) > Date.now()) isStillLocked = true;
+      } catch(e) {}
+
+      if (!isStillLocked) {
+        btn.disabled = false;
+        if (btnText) btnText.textContent = t("pin_unlock");
+        if (spinner) spinner.classList.add("hidden");
+      }
     }
   }
 

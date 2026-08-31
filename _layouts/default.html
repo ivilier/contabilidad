@@ -334,11 +334,8 @@
 
       </div>
 
-      <div class="border-t border-gray-700 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2">
-        <p data-i18n="footer_rights">© {{ 'now' | date: '%Y' }} {{ site.title }}. Todos los derechos reservados.</p>
-        <button onclick="showSection('panel')" class="text-gray-600 hover:text-gray-400 transition-colors p-1 text-[11px] select-none" title="Acceso al panel" aria-label="Acceso al panel">
-          🔒
-        </button>
+      <div class="border-t border-gray-700 mt-8 pt-6 text-center text-xs text-gray-500" data-i18n="footer_rights">
+        © {{ 'now' | date: '%Y' }} {{ site.title }}. Todos los derechos reservados.
       </div>
     </div>
   </footer>
@@ -489,6 +486,8 @@
         err_unauthorized: "Acceso no autorizado o sesión expirada.",
         err_locked: "Demasiados intentos fallidos. Acceso temporalmente bloqueado por 15 minutos.",
         err_session_timeout: "Sesión bloqueada automáticamente por inactividad (30 min).",
+        lbl_locked_countdown: "Demasiados intentos fallidos. Reintenta en {time}",
+        lbl_unlock_ready: "✓ Ya puedes intentar ingresar tu PIN nuevamente.",
         success_msg: "✓ Registrado con éxito",
         error_msg: "✗ Error al enviar. Intenta de nuevo.",
       },
@@ -577,6 +576,8 @@
         err_unauthorized: "Unauthorized access or session expired.",
         err_locked: "Too many failed attempts. Access temporarily locked for 15 minutes.",
         err_session_timeout: "Session automatically locked due to inactivity (30 min).",
+        lbl_locked_countdown: "Too many failed attempts. Try again in {time}",
+        lbl_unlock_ready: "✓ You can now try entering your PIN again.",
         success_msg: "✓ Submitted successfully",
         error_msg: "✗ Submission failed. Please try again.",
       },
@@ -825,20 +826,8 @@
         if (!el.value) el.value = today;
       });
 
-      // Handle direct URL hash navigation (#panel / #admin)
-      if (window.location.hash === "#panel" || window.location.hash === "#admin") {
-        showSection("panel");
-      } else {
-        showSection("catalog");
-      }
-
-      window.addEventListener("hashchange", function () {
-        if (window.location.hash === "#panel" || window.location.hash === "#admin") {
-          showSection("panel");
-        } else if (window.location.hash === "#catalog" || window.location.hash === "") {
-          showSection("catalog");
-        }
-      });
+      // Default to public catalog view
+      showSection("catalog");
     });
   </script>
 
