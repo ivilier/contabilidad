@@ -84,7 +84,8 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
       </button>
     </div>
 
-    <!-- Panel Tab Switcher -->
+    <!-- Panel Tab Switcher (Comentado: solo contabilidad activa) -->
+    <!--
     <div class="flex gap-2 p-1 bg-gray-200/80 rounded-xl w-fit border border-gray-300">
       <button id="tab-btn-accounting" onclick="switchPanelTab('accounting')"
         class="panel-tab-btn active-panel-tab px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150">
@@ -95,6 +96,7 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
         <span data-i18n="panel_inventory">Inventario</span>
       </button>
     </div>
+    -->
 
     <!-- ══ ACCOUNTING TAB ════════════════════════════════════════════════ -->
     <div id="tab-accounting" class="panel-tab-content space-y-6">
@@ -206,10 +208,10 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
 
     </div><!-- /#tab-accounting -->
 
-    <!-- ══ INVENTORY TAB ═════════════════════════════════════════════════ -->
+    <!-- ══ INVENTORY TAB (Comentado / Deshabilitado temporalmente) ═════════════════ -->
+    <!--
     <div id="tab-inventory" class="panel-tab-content hidden space-y-6">
 
-      <!-- Inventory Form Card -->
       <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-md border border-gray-200">
         <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
           <span>📦</span>
@@ -218,10 +220,8 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
 
         <form id="inventory-form" onsubmit="submitInventory(event)" novalidate autocomplete="off">
 
-          <!-- Honeypot anti-spam field -->
           <input type="text" name="_hp" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true" />
 
-          <!-- Direction -->
           <fieldset class="mb-5">
             <legend class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3" data-i18n="form_direction">Dirección</legend>
             <div class="grid grid-cols-2 gap-3">
@@ -240,7 +240,6 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
             <p id="inv-direction-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </fieldset>
 
-          <!-- Product Selector -->
           <div class="mb-4">
             <div class="flex items-center justify-between mb-2">
               <label for="inv-product" class="block text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="inv_product">Producto</label>
@@ -268,7 +267,6 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
             <p id="inv-product-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </div>
 
-          <!-- Live Product Preview Card (Foto + Detalles + Stock) -->
           <div id="inv-preview-card" class="hidden mb-5 p-4 rounded-xl bg-gray-50 border border-gray-200 flex items-center gap-4 transition-all animate-fade-in">
             <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-300 shadow-sm flex items-center justify-center">
               <img id="inv-preview-img" src="" alt="Producto" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'64\' height=\'64\' viewBox=\'0 0 64 64\'><rect width=\'64\' height=\'64\' fill=\'%23f3f4f6\'/><text x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'24\'>💎</text></svg>';" />
@@ -286,7 +284,6 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
             </div>
           </div>
 
-          <!-- Quantity -->
           <div class="mb-5">
             <label for="inv-qty" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="inv_quantity">Cantidad</label>
             <input type="number" id="inv-qty" name="inv-qty" min="1" step="1"
@@ -295,7 +292,6 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
             <p id="inv-qty-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_quantity">La cantidad debe ser mayor a 0.</p>
           </div>
 
-          <!-- Notes -->
           <div class="mb-5">
             <label for="inv-notes" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="inv_notes">Notas</label>
             <textarea id="inv-notes" name="inv-notes" rows="2" maxlength="300"
@@ -303,7 +299,6 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
               data-i18n-placeholder="inv_notes" placeholder="Notas"></textarea>
           </div>
 
-          <!-- Date -->
           <div class="mb-8">
             <label for="inv-date" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2" data-i18n="form_date">Fecha</label>
             <input type="date" id="inv-date" name="inv-date"
@@ -311,7 +306,6 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
             <p id="inv-date-err" class="err-msg text-red-500 text-xs mt-2 hidden" data-i18n="err_required">Este campo es obligatorio.</p>
           </div>
 
-          <!-- Submit Button -->
           <button type="submit" id="inv-submit-btn"
             class="w-full bg-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-sm transition-all duration-150 active:scale-[0.99] flex items-center justify-center gap-2">
             <span id="inv-btn-text" data-i18n="form_submit">Registrar</span>
@@ -321,7 +315,6 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
         </form>
       </div>
 
-      <!-- Recent Inventory Movements List -->
       <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-md border border-gray-200">
         <div class="flex items-center justify-between mb-5">
           <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
@@ -340,7 +333,8 @@ description: "Catálogo de joyería fina, accesorios y gestión de caja e invent
         </div>
       </div>
 
-    </div><!-- /#tab-inventory -->
+    </div>
+    -->
 
   </div><!-- /#panel-content -->
 
