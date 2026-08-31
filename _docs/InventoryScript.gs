@@ -52,6 +52,8 @@ var HEADERS = [
 ];
 
 // ── TOKEN / PIN DE AUTENTICACIÓN ──────────────────────────────────────────────
+// Se lee de forma segura desde las "Propiedades del Script" en Google Apps Script
+// para que la clave real NUNCA quede expuesta en el repositorio público de GitHub.
 var AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
 
 /**

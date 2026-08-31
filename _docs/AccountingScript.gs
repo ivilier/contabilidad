@@ -23,8 +23,8 @@ var SHEET_NAME = "CashFlow";
 var HEADERS    = ["Timestamp", "Direction", "Amount", "Description", "Date"];
 
 // ── AUTHENTICATION TOKEN ──────────────────────────────────────────────────────
-// Change this to your private PIN or secure password.
-// Alternatively, set it in Project Settings → Script Properties with key "AUTH_TOKEN".
+// Se lee de forma segura desde las "Propiedades del Script" en Google Apps Script
+// para que la clave real NUNCA quede expuesta en el repositorio público de GitHub.
 var AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN");
 
 /**
