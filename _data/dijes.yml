@@ -1,5 +1,5 @@
 # Dijes — Catálogo oficial sincronizado con Google Sheets
-# Total items: 14
+# Total items: 13
 
 - ref_code: "P0001"
   description: "Dije Niño"
@@ -40,6 +40,3 @@
 - ref_code: "P0017"
   description: "Dije Virgen"
   price: "$20"
-- ref_code: "P0018"
-  description: "Dije TEST"
-  price: "$25"
