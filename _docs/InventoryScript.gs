@@ -136,16 +136,24 @@ function checkAuthSecurity_(e, postData) {
   }
 }
 
+// ── CORREO DE ALERTAS DE SEGURIDAD ───────────────────────────────────────────
+function getAlertEmail_() {
+  return PropertiesService.getScriptProperties().getProperty("ALERT_EMAIL") || "";
+}
+
 /**
  * Envía una alerta por correo electrónico al propietario cuando se activa el bloqueo.
  */
 function sendLockoutEmailAlert_() {
   try {
-    var ownerEmail = PropertiesService.getScriptProperties().getProperty("ALERT_EMAIL") ||
-                     Session.getEffectiveUser().getEmail();
-    if (!ownerEmail) return;
+    var ownerEmail = getAlertEmail_();
+    if (!ownerEmail) {
+      Logger.log("⚠️ No se ha configurado 'ALERT_EMAIL' en las Propiedades del Script. Agrega la propiedad ALERT_EMAIL para recibir las alertas.");
+      return;
+    }
 
-    var timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT-5", "yyyy-MM-dd HH:mm:ss");
+    var timeZone = Session.getScriptTimeZone() || "GMT-5";
+    var timestamp = Utilities.formatDate(new Date(), timeZone, "yyyy-MM-dd HH:mm:ss");
     var subject = "🚨 [Alerta de Seguridad ivilier] Bloqueo de 15 min activado en el panel";
     var body =
       "Hola,\n\n" +
@@ -163,9 +171,31 @@ function sendLockoutEmailAlert_() {
       subject: subject,
       body: body
     });
+    Logger.log("✓ Correo de alerta enviado exitosamente a: " + ownerEmail);
   } catch (err) {
     Logger.log("sendLockoutEmailAlert_ error: " + err.toString());
   }
+}
+
+/**
+ * Utilidad manual: Ejecuta esta función en el editor de Apps Script para forzar
+ * la ventana de permisos de Google y autorizar el envío de correos.
+ */
+function authorizeMailPermission() {
+  var email = getAlertEmail_();
+  if (!email) {
+    throw new Error("Primero debes agregar la propiedad 'ALERT_EMAIL' con tu correo en: Configuración del proyecto ⚙️ -> Propiedades de la secuencia de comandos.");
+  }
+  MailApp.sendEmail(email, "🚨 [Prueba] Permiso de Alertas Autorizado", "¡Perfecto! El sistema de alertas de seguridad de ivilier Joyería ya tiene permiso para enviarte correos.");
+  Logger.log("✓ ¡Éxito! Permiso concedido y correo de prueba enviado a: " + email);
+}
+
+/**
+ * Utilidad manual: Ejecuta esta función en el editor de Apps Script para probar el envío
+ * de correos de alerta.
+ */
+function testSecurityEmail() {
+  sendLockoutEmailAlert_();
 }
 
 /**
