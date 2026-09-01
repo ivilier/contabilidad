@@ -114,6 +114,10 @@ function checkAuthSecurity_(e, postData) {
       var lockExpiresAt = now + (LOCKOUT_SECONDS * 1000);
       cache.put("auth_lock_until", String(lockExpiresAt), LOCKOUT_SECONDS);
       cache.remove("failed_auth_attempts");
+
+      // Envía alerta por correo al propietario
+      sendLockoutEmailAlert_();
+
       return {
         authorized: false,
         locked: true,
@@ -129,6 +133,38 @@ function checkAuthSecurity_(e, postData) {
         message: "Acceso no autorizado (Intento " + failedCount + " de " + MAX_FAILED_ATTEMPTS + ")"
       };
     }
+  }
+}
+
+/**
+ * Envía una alerta por correo electrónico al propietario cuando se activa el bloqueo.
+ */
+function sendLockoutEmailAlert_() {
+  try {
+    var ownerEmail = PropertiesService.getScriptProperties().getProperty("ALERT_EMAIL") ||
+                     Session.getEffectiveUser().getEmail();
+    if (!ownerEmail) return;
+
+    var timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT-5", "yyyy-MM-dd HH:mm:ss");
+    var subject = "🚨 [Alerta de Seguridad ivilier] Bloqueo de 15 min activado en el panel";
+    var body =
+      "Hola,\n\n" +
+      "Se ha activado un bloqueo de seguridad en el panel de administración de ivilier Joyería.\n\n" +
+      "• Motivo: Se registraron 3 intentos fallidos consecutivos de ingreso del PIN.\n" +
+      "• Duración del bloqueo: 15 minutos (el panel está temporalmente inaccesible).\n" +
+      "• Fecha y hora: " + timestamp + "\n\n" +
+      "Acciones recomendadas:\n" +
+      "1. Si fuiste tú intentando ingresar y necesitas acceso inmediato, abre el editor de Apps Script y ejecuta la función 'resetSecurityLock'.\n" +
+      "2. Si NO fuiste tú, alguien o un bot intentó adivinar tu contraseña. No compartas tu PIN con nadie.\n\n" +
+      "— Sistema de Seguridad ivilier Joyería";
+
+    MailApp.sendEmail({
+      to: ownerEmail,
+      subject: subject,
+      body: body
+    });
+  } catch (err) {
+    Logger.log("sendLockoutEmailAlert_ error: " + err.toString());
   }
 }
 

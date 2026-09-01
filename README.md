@@ -39,6 +39,11 @@ Construido bajo una arquitectura **Jamstack serverless**, combina un sitio está
   - **Intento 1 fallido:** Mensaje claro de advertencia indicando que quedan 2 intentos.
   - **Intento 2 fallido:** Alerta de último intento restante antes del bloqueo de seguridad.
   - **Intento 3 fallido:** Bloqueo temporal por 15 minutos con **reloj digital de cuenta regresiva en vivo (`MM:SS`)**, reactivándose automáticamente al llegar a cero.
+- **Alertas Automáticas por Correo (Gmail):** Cuando ocurre un bloqueo por 3 intentos fallidos, Google Apps Script envía inmediatamente un correo de advertencia con la fecha y hora a tu correo de administrador.
+- **Cabeceras de Seguridad HTTP (CSP & Políticas de Navegación):**
+  - **Content Security Policy (CSP):** Restringe la ejecución de scripts y recursos exclusivamente a fuentes autorizadas (Tailwind CDN, Google Fonts, Apps Script), blindando la tienda contra ataques XSS.
+  - **X-Content-Type-Options: nosniff** y **Referrer-Policy: strict-origin-when-cross-origin**.
+  - **Permissions-Policy:** Deshabilita accesos no solicitados del navegador (cámara, micrófono, geolocalización).
 - **Sanitización contra Inyección de Fórmulas:** Neutralización automática de caracteres de escape y fórmulas (`=`, `+`, `-`, `@`) en descripciones y notas antes de guardarse en Google Sheets.
 - **Acceso Discreto al Panel (Oculto al Público):** El botón de acceso al panel permanece invisible para clientes y visitantes. Solo tú puedes invocarlo mediante:
   - **Triple clic rápido en el logo 💎** de la tienda.

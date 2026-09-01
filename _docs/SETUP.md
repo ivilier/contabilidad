@@ -89,6 +89,8 @@ Keep both Web App URLs handy.
   - **Attempt 1:** Displays a warning indicating that 2 attempts remain.
   - **Attempt 2:** Displays an urgent warning indicating the last remaining attempt before lockout.
   - **Attempt 3:** Access is temporarily locked for 15 minutes and the frontend displays a **live digital countdown clock (`MM:SS`)**, automatically re-enabling access once the timer reaches `00:00`.
+- **Automatic Email Alert (Gmail):** On the 3rd failed attempt, Apps Script automatically sends an intrusion alert email to your Google account with the timestamp. *(Optional: Set `ALERT_EMAIL` in Script Properties if you want alerts sent to a specific email).*
+- **Web Security Headers (CSP):** Strict Content Security Policy, `X-Content-Type-Options: nosniff`, and `Permissions-Policy` are enforced in `_layouts/default.html` to shield against XSS attacks and unauthorized resource loading.
 - **Manual Lock Reset (`resetSecurityLock`):** If you ever need to manually clear the lockout or reset the failure counter, select the `resetSecurityLock` function in Apps Script's top toolbar and click **Run**.
 - **Formula Injection Protection:** Text inputs are automatically sanitized to prevent malicious spreadsheet formula execution.
 
